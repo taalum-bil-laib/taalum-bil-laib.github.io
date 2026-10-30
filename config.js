@@ -8,4 +8,4 @@ window.HUROOF_FIREBASE = {
   appId: "1:954048536812:web:e374a827cd974085ba85c9"
 };
 // غيّر هذا الرقم (وفي version.json) مع كل تحديث للألعاب، فيظهر لأولياء الأمور شريط «يوجد تحديث جديد».
-window.HUROOF_VERSION = "16";
+window.HUROOF_VERSION = "17";

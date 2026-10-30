@@ -171,7 +171,7 @@ td b{font-size:17px}
     </div>
     <div class="panel">
       <div class="tbl-wrap"><table>
-        <thead><tr><th>الطالب</th><th>رمز الدعوة لولي الأمر</th><th>مغامرات الحروف</th><th>أين يسكن الحرف</th><th>أبطال الحركات</th><th>فتحة يقرأ</th><th>القراءة بالحركات</th><th>مسرح الفهم</th><th>الألوان</th><th>الأشكال</th><th>طويل وقصير</th><th>كبير وصغير</th><th>الأرقام</th><th>مفاهيم: أوزان ومسافات واتجاهات وتصنيف وزمن</th><th>الأوسمة</th><th></th></tr></thead>
+        <thead><tr><th>الطالب</th><th>رمز الدعوة لولي الأمر</th><th>مغامرات الحروف</th><th>أين يسكن الحرف</th><th>أبطال الحركات</th><th>فتحة يقرأ</th><th>القراءة بالحركات</th><th>مسرح الفهم</th><th>الألوان</th><th>الأشكال</th><th>طويل وقصير</th><th>كبير وصغير</th><th>الأرقام</th><th>مفاهيم: أوزان ومسافات واتجاهات وتصنيف وزمن</th><th>الأعداد ١–٢٠: كتابة وترتيب ومقارنة ومكونات</th><th>الأوسمة</th><th></th></tr></thead>
         <tbody id="tBody"></tbody>
       </table></div>
       <p class="note" id="teacherEmpty" hidden>أضف طلابك ليظهروا هنا. لكل طالب رمز دعوة ترسله لولي أمره ليتابع تقدّمه من البيت.</p>
@@ -219,6 +219,12 @@ td b{font-size:17px}
       <button class="game" data-game="math6" style="--a:#1e88e5;--b:#8e24aa"><span class="ic">🧭</span><h3>الاتجاهات</h3><p>فوق وتحت، أمام وخلف، ويمين ويسار مع سائق المدينة.</p><span class="pr" data-pr="math6"></span></button>
       <button class="game" data-game="math7" style="--a:#ff8a3d;--b:#455a64"><span class="ic">🏭</span><h3>مصنع الفرز</h3><p>التصنيف حسب اللون والشكل والحجم والنوع.</p><span class="pr" data-pr="math7"></span></button>
       <button class="game" data-game="math8" style="--a:#3949ab;--b:#ff9f1c"><span class="ic">🕰️</span><h3>الزمن</h3><p>النهار والليل، وقطار الأسبوع، واليوم وغدًا، والشهور الهجرية.</p><span class="pr" data-pr="math8"></span></button>
+      <button class="game" data-game="math9" style="--a:#e53935;--b:#fdd835"><span class="ic">✏️</span><h3>رسّام الأرقام</h3><p>تتبّع الرقم بإصبعك ثم اكتبه من ذاكرتك (١–٢٠).</p><span class="pr" data-pr="math9"></span></button>
+      <button class="game" data-game="math10" style="--a:#ffb300;--b:#1a3fb0"><span class="ic">🟨</span><h3>عائلة العشرة</h3><p>الأعداد ١١–٢٠ بعصا الخرز الذهبية ولوحة السحر.</p><span class="pr" data-pr="math10"></span></button>
+      <button class="game" data-game="math11" style="--a:#8e24aa;--b:#2e9d3a"><span class="ic">🪜</span><h3>الترتيب</h3><p>الدرج السحري، والعدّ التنازلي للصاروخ، والرقم الناقص.</p><span class="pr" data-pr="math11"></span></button>
+      <button class="game" data-game="math12" style="--a:#2e9d3a;--b:#e53935"><span class="ic">🐊</span><h3>المقارنة</h3><p>التمساح الجائع، وميزان الأعداد، وسباق الأبراج.</p><span class="pr" data-pr="math12"></span></button>
+      <button class="game" data-game="math13" style="--a:#e53935;--b:#1e6fd9"><span class="ic">📏</span><h3>مونتسوري الأعداد</h3><p>قضبان الأعداد، وصندوق المغازل والصفر، والزوجي والفردي.</p><span class="pr" data-pr="math13"></span></button>
+      <button class="game" data-game="math14" style="--a:#ef5350;--b:#ffb300"><span class="ic">🏠</span><h3>بيت الأعداد</h3><p>مكونات العدد: وزّع الشبابيك يمينًا ويسارًا، والشبابيك الناقصة، والبيت كله.</p><span class="pr" data-pr="math14"></span></button>
     </div>
   </section>
 </div>
@@ -289,10 +295,10 @@ async function route(u){ view('vLoading'); let teacher=false, admin=false, block
 function home(){ if(!me){ view('vAuth'); return; } if(me.teacher){ view('vTeacher'); loadTeacher(); } else { view('vParent'); loadParent(); } }
 
 /* ---------- progress summaries ---------- */
-const GAMEKEYS={huroof:['huroof_progress'],ayn:['ayn_progress'],harakat:['hrk2_progress','hrk2_medals'],blend:['blend_progress','blend_medals'],math1:['math1_progress'],math2:['math2_progress'],math3:['math3_progress'],noor:['noor_progress','noor_medals'],fahm:['fahm_progress','fahm_medals'],num:['num_progress','num_medals'],math4:['math4_progress'],math5:['math5_progress'],math6:['math6_progress'],math7:['math7_progress'],math8:['math8_progress']};
+const GAMEKEYS={huroof:['huroof_progress'],ayn:['ayn_progress'],harakat:['hrk2_progress','hrk2_medals'],blend:['blend_progress','blend_medals'],math1:['math1_progress'],math2:['math2_progress'],math3:['math3_progress'],noor:['noor_progress','noor_medals'],fahm:['fahm_progress','fahm_medals'],num:['num_progress','num_medals'],math4:['math4_progress'],math5:['math5_progress'],math6:['math6_progress'],math7:['math7_progress'],math8:['math8_progress'],math9:['math9_progress'],math10:['math10_progress'],math11:['math11_progress'],math12:['math12_progress'],math13:['math13_progress'],math14:['math14_progress']};
 // the reading lessons, shown on the hub unit by unit (lesson id, number of stages)
 const UNITS={fatha:[['fl',5],['fw',3],['fs',2]],kasra:[['kl',5],['fk',2],['kw',2],['ks',2]],damma:[['dl',5],['mx',2],['dw',2],['rv',2]],madd:[['ma',2],['my',2],['mw',2]],sukun:[['sk',3],['sh',2],['ss',1]],tanween:[['tn',3],['tx',2],['tw',2]]};
-const CPT=[['math4',3],['math5',3],['math6',3],['math7',4],['math8',5]];
+const CPT=[['math4',3],['math5',3],['math6',3],['math7',4],['math8',5]], NUMG=[['math9',4],['math10',3],['math11',3],['math12',3],['math13',3],['math14',3]];
 const parse=v=>{ try{ return v?JSON.parse(v):null; }catch(e){ return null; } };
 function summarize(data){ // data: {game:{key:jsonString}}
  const g=k=>data[k]||{}; const s={};
@@ -309,19 +315,20 @@ function summarize(data){ // data: {game:{key:jsonString}}
  s.cpt={}; s.concepts=0; for(const [gm,n] of CPT){ const p=parse(g(gm)[gm+'_progress'])||{}; const d=Object.keys(p).filter(k=>k[0]!=='_'&&p[k]&&p[k].stars>0).length; s.cpt[gm]=[d,n]; s.concepts+=d; }
  const up=parse(g('num').num_progress)||{}; s.num=Object.values(up).reduce((a,v)=>a+(Array.isArray(v)?v.filter(x=>x>0).length:0),0);
  s.units={}; for(const u in UNITS){ let d=0,n=0; for(const [id,k] of UNITS[u]){ n+=k; d+=Array.isArray(np[id])?np[id].filter(x=>x>0).length:0; } s.units[u]=[d,n]; }
+ s.numg=0; for(const [gm,n] of NUMG){ const p=parse(g(gm)[gm+'_progress'])||{}; const d=Object.keys(p).filter(k=>k[0]!=='_'&&p[k]&&p[k].stars>0).length; s.cpt[gm]=[d,n]; s.numg+=d; }
  s.medals=s.hMedals+s.bMedals; return s; }
 const bar=(n,of)=>`<div class="bar" title="${AR(n)} من ${AR(of)}"><i style="width:${Math.round(100*Math.min(1,n/of))}%"></i></div><small>${AR(n)} / ${AR(of)}</small>`;
 async function readProgress(sid){ const out={}; const docs=await Promise.all(Object.keys(GAMEKEYS).map(g=>db.doc(`students/${sid}/progress/${g}`).get())); docs.forEach(d=>{ if(d.exists) out[d.id]=(d.data().data)||{}; }); return out; }
 
 /* ---------- teacher ---------- */
-async function loadTeacher(){ const tb=$('#tBody'); tb.innerHTML='<tr><td colspan="16"><div class="spin"></div></td></tr>';
+async function loadTeacher(){ const tb=$('#tBody'); tb.innerHTML='<tr><td colspan="17"><div class="spin"></div></td></tr>';
  try{ const qs=await db.collection('students').where('teacherUid','==',me.uid).get(); const rows=await Promise.all(qs.docs.map(async d=>{ const st=d.data(); const pr=await readProgress(d.id).catch(()=>({})); return {id:d.id,name:st.name,parents:(st.parentUids||[]).length,s:summarize(pr)}; }));
   rows.sort((a,b)=>a.name.localeCompare(b.name,'ar')); $('#teacherEmpty').hidden=rows.length>0;
   tb.innerHTML=rows.map(r=>{ const a=avatarOf(r.id); return `<tr><td><b>${a.e} ${esc(r.name)}</b><br><small class="note">${r.parents?`مرتبط بـ ${AR(r.parents)} ولي أمر`:'لم يرتبط ولي أمر بعد'}</small></td>
    <td><span class="code">${fmtCode(r.id)}</span> <button class="btn sm" data-copy="${r.id}">نسخ</button></td>
-   <td>${bar(r.s.huroof,28)}</td><td>${bar(r.s.aynLesson,4)}<small>سباق: ${AR(r.s.aynRace)} حرفًا</small></td><td>${bar(r.s.harakat,28)}</td><td>${bar(r.s.blend,3)}</td><td>${bar(r.s.noor,51)}</td><td>${bar(r.s.fahm,14)}</td><td>${bar(r.s.colors,10)}</td><td>${bar(r.s.shapes,9)}</td><td>${bar(r.s.longshort,4)}</td><td>${bar(r.s.bigsmall,4)}</td><td>${bar(r.s.num,12)}</td><td>${bar(r.s.concepts,18)}</td><td><b>🏅 ${AR(r.s.medals)}</b></td>
+   <td>${bar(r.s.huroof,28)}</td><td>${bar(r.s.aynLesson,4)}<small>سباق: ${AR(r.s.aynRace)} حرفًا</small></td><td>${bar(r.s.harakat,28)}</td><td>${bar(r.s.blend,3)}</td><td>${bar(r.s.noor,51)}</td><td>${bar(r.s.fahm,14)}</td><td>${bar(r.s.colors,10)}</td><td>${bar(r.s.shapes,9)}</td><td>${bar(r.s.longshort,4)}</td><td>${bar(r.s.bigsmall,4)}</td><td>${bar(r.s.num,12)}</td><td>${bar(r.s.concepts,18)}</td><td>${bar(r.s.numg,19)}</td><td><b>🏅 ${AR(r.s.medals)}</b></td>
    <td style="white-space:nowrap"><button class="btn sm primary" data-play="${r.id}" data-name="${esc(r.name)}">▶ العب</button> <button class="btn sm danger" data-del="${r.id}" data-name="${esc(r.name)}">حذف</button></td></tr>`; }).join('');
- }catch(e){ tb.innerHTML=`<tr><td colspan="16"><div class="msg err">${esc(errText(e))}</div></td></tr>`; } }
+ }catch(e){ tb.innerHTML=`<tr><td colspan="17"><div class="msg err">${esc(errText(e))}</div></td></tr>`; } }
 $('#fAdd').addEventListener('submit',async e=>{ e.preventDefault(); const name=$('#inStudent').value.trim(); if(!name){ msg($('#addMsg'),'اكتب اسم الطالب.'); return; } $('#btnAdd').disabled=true;
  try{ const id=genCode(10); await db.doc('students/'+id).set({name,teacherUid:me.uid,parentUids:[],createdAt:TS()}); $('#inStudent').value=''; msg($('#addMsg'),`أُضيف ${name}. رمز الدعوة لولي أمره: ${fmtCode(id)}`,true); loadTeacher(); }catch(err){ msg($('#addMsg'),errText(err)); }
  $('#btnAdd').disabled=false; });

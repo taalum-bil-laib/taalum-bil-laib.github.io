@@ -71,7 +71,7 @@ button{font-family:var(--body);color:inherit}
 .ib{width:52px;height:52px;border-radius:16px;border:0;background:rgba(255,255,255,.94);color:#1a1a2e;font-size:22px;cursor:pointer;display:grid;place-items:center;box-shadow:0 6px 16px rgba(0,0,0,.18)}
 .say{position:fixed;z-index:25;left:50%;top:40%;transform:translate(-50%,-50%);font-family:var(--display);font-size:clamp(60px,12vw,140px);line-height:1.1;white-space:nowrap;pointer-events:none;text-shadow:0 6px 0 rgba(0,0,0,.18),0 0 30px rgba(255,255,255,.95);animation:sayin 1.5s ease-out forwards}
 @keyframes sayin{0%{transform:translate(-50%,-50%) scale(.3);opacity:0}18%{transform:translate(-50%,-50%) scale(1.12);opacity:1}75%{opacity:1}100%{transform:translate(-50%,-62%) scale(1);opacity:0}}
-.tip{position:fixed;z-index:24;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);padding:12px 22px;border-radius:20px;background:rgba(255,255,255,.95);color:#1a1a2e;font-size:clamp(18px,2.6vw,24px);font-weight:800;box-shadow:0 10px 26px rgba(0,0,0,.2);max-width:calc(100% - 32px);text-align:center}
+.tip{position:fixed;z-index:24;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);padding:12px 22px;border-radius:20px;background:rgba(255,255,255,.95);color:#1a1a2e;font-size:clamp(18px,2.6vw,24px);font-weight:800;box-shadow:0 10px 26px rgba(0,0,0,.2);max-width:calc(100% - 32px);text-align:center;pointer-events:none}
 .tip.fix{background:#fff3cd;border:3px solid #ffb300}
 #cursor{position:fixed;z-index:31;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;border:4px solid #fff;box-shadow:0 0 0 3px #1a1a2e,0 0 20px #fff;pointer-events:none}
 .wiggle{animation:wig .9s ease-in-out 2}
@@ -196,7 +196,9 @@ const Speech={voice:null,init(){const p=()=>{try{const vs=speechSynthesis.getVoi
  say(t,rate){ if(!S.voice||!this.voice) return; try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.voice=this.voice; u.lang=this.voice.lang; u.rate=rate||.8; u.pitch=1.1; speechSynthesis.speak(u);}catch(e){} }};
 function bigWord(text,color){ const d=document.createElement('div'); d.className='say'; d.textContent=text; d.style.color=color||'#ff7a1a'; document.body.appendChild(d); setTimeout(()=>d.remove(),1600); }
 function praise(word,color){ Snd.play('ok'); rumble(200,.3,.7); bigWord('ممتاز! '+word,color); Speech.say('ممتاز! '+word); }
-function tip(text,fix){ const t=$('#tip'); t.textContent=text; t.className='tip'+(fix?' fix':''); t.hidden=!text; }
+// the tip never covers the answer cards: it sits just above them, and fades away by itself
+function tip(text,fix){ const t=$('#tip'); clearTimeout(tip.h); t.textContent=text; t.className='tip'+(fix?' fix':''); t.hidden=!text; placeTip(); if(text) tip.h=setTimeout(()=>{ t.hidden=true; },fix?7000:5000); }
+function placeTip(){ const t=$('#tip'), o=$('#opts'); t.style.bottom=(o&&!o.hidden&&o.offsetHeight)?(innerHeight-o.getBoundingClientRect().top+10)+'px':''; }
 function toast(t){ const e=$('#toast'); e.textContent=t; e.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>e.hidden=true,2600); }
 const starsHTML=n=>[0,1,2].map(i=>i<n?'<b>★</b>':'★').join('');
 const stepsHTML=(n,of)=>`<span class="steps">${Array.from({length:of},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</span>`;
@@ -222,15 +224,15 @@ function finishAct(id,title,first,total){ const st=starsFor(first,total); PR[id]
 // a run of rounds: R.go() starts the next one, R.win() / R.miss() score it
 function run(id,total,title,setup){ const R={i:0,total,first:0,tries:0,busy:false};
  R.go=()=>{ if(R.i>=R.total){ finishAct(id,title,R.first,R.total); return; } R.tries=0; R.busy=false; closeOpts(); setup(R); };
- R.win=(word,color,wait)=>{ if(R.busy) return; R.busy=true; if(R.tries===0) R.first++; PR[id]=PR[id]||{}; PR[id].ok=(PR[id].ok||0)+1; save(); praise(word,color); R.i++; T.set(()=>{ tip(''); sayIt(word,()=>T.set(R.go,350)); },wait||1500); };
+ R.win=(word,color,wait,alts)=>{ if(R.busy) return; R.busy=true; if(R.tries===0) R.first++; PR[id]=PR[id]||{}; PR[id].ok=(PR[id].ok||0)+1; save(); praise(word,color); R.i++; T.set(()=>{ tip(''); sayIt(word,()=>T.set(R.go,350),alts); },wait||1500); };
  R.miss=msg=>{ R.tries++; Snd.play('no'); rumble(90,.1,.1); if(msg){ tip(msg,true); Speech.say(msg); } };
  R.steps=()=>stepsHTML(R.i,R.total);
  return R; }
 
 /* ---------- answer cards at the bottom of the screen ---------- */
-function opts(list,onPick){ const box=$('#opts'); box.style.direction=''; box.innerHTML=list.map((o,i)=>`<button class="opt2" data-i="${i}" data-v="${o.v}" style="--c:${o.color||'#3fa9ff'}">${o.em?`<span class="em">${o.em}</span>`:''}<b>${o.label}</b></button>`).join(''); box.hidden=false;
+function opts(list,onPick){ const box=$('#opts'); box.style.direction=''; box.innerHTML=list.map((o,i)=>`<button class="opt2" data-i="${i}" data-v="${o.v}" style="--c:${o.color||'#3fa9ff'}">${o.em?`<span class="em">${o.em}</span>`:''}<b>${o.label}</b></button>`).join(''); box.hidden=false; placeTip();
  box.onclick=e=>{ const b=e.target.closest('[data-i]'); if(b) onPick(list[+b.dataset.i].v,b); }; setTimeout(()=>{ try{ box.querySelector('button').focus({preventScroll:true}); }catch(e){} },30); }
-function closeOpts(){ const b=$('#opts'); b.hidden=true; b.innerHTML=''; b.onclick=null; }
+function closeOpts(){ const b=$('#opts'); b.hidden=true; b.innerHTML=''; b.onclick=null; placeTip(); }
 function shake(b){ if(!b) return; b.classList.remove('no'); void b.offsetWidth; b.classList.add('no'); }
 const optBtn=v=>$(`#opts [data-v="${v}"]`);
 
@@ -246,13 +248,13 @@ function draggable(e,onDrop){ e.classList.add('drag'); e._drop=onDrop; return e;
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 const norm=s=>String(s).replace(/[ً-ْـ]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').replace(/\s+/g,' ').trim();
 function closeSay(){ const b=$('#sayit'); if(b){ b.hidden=true; b.innerHTML=''; } }
-function sayIt(word,done){ if(!S.say){ done(); return; } const b=$('#sayit');
+function sayIt(word,done,alts){ if(!S.say){ done(); return; } const b=$('#sayit');
  b.innerHTML=`<div class="panel sayp" dir="rtl"><p>قُل الكلمة بصوتك 🗣️</p><div class="sw">${word}</div><div class="row" style="justify-content:center">${SR?'<button class="btn primary" id="sMic">🎤 اضغط وقُل</button>':''}<button class="btn" id="sOk">✅ نطقها</button><button class="btn sm" id="sSkip">تخطّي</button></div><p class="note" id="sMsg">${SR?'زر ✅ للمعلم إن نطقها الطالب ولم يسمعها الجهاز.':'المعلم يضغط ✅ عندما ينطق الطالب الكلمة.'}</p></div>`;
  b.hidden=false; Speech.say(word); let done1=false;
  const fin=ok=>{ if(done1) return; done1=true; closeSay(); if(ok){ Snd.play('cheer'); bigWord('👏 '+word,'#2e9d3a'); PR._said=(PR._said||0)+1; save(); } T.set(done,ok?900:100); };
  $('#sOk').onclick=()=>fin(true); $('#sSkip').onclick=()=>fin(false);
  if(SR) $('#sMic').onclick=()=>{ try{ const r=new SR(); r.lang='ar-SA'; r.interimResults=false; r.maxAlternatives=5; $('#sMsg').textContent='🎧 أستمع…'; $('#sMic').disabled=true;
-  r.onresult=e=>{ const alts=[...e.results[0]].map(a=>norm(a.transcript)); const w=norm(word).replace(/^ال/,''); if(alts.some(a=>a.includes(w))) fin(true); else { $('#sMsg').textContent='سمعت: «'+e.results[0][0].transcript+'». حاول مرة أخرى 🙂'; Snd.play('no'); } };
+  r.onresult=e=>{ const heard=[...e.results[0]].map(a=>norm(a.transcript)); const w=norm(word).replace(/^ال/,''); if(heard.some(a=>a.includes(w)||(alts||[]).some(x=>a.includes(norm(x))))) fin(true); else { $('#sMsg').textContent='سمعت: «'+e.results[0][0].transcript+'». حاول مرة أخرى 🙂'; Snd.play('no'); } };
   r.onerror=()=>{ $('#sMsg').textContent='لم أسمع جيدًا. حاول مرة أخرى، أو يضغط المعلم ✅'; }; r.onend=()=>{ const m=$('#sMic'); if(m) m.disabled=false; }; r.start(); }catch(e){ $('#sMsg').textContent='الميكروفون غير متاح هنا؛ يضغط المعلم ✅.'; } }; }
 
 /* ---------- مصنع الفرز: التصنيف ---------- */

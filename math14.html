@@ -1,0 +1,410 @@
+﻿<!doctype html>
+<!-- © ٢٠٢٦ أحمد حازم عبد الله — جميع الحقوق محفوظة. لا يجوز نسخ أو استخدام أو إعادة نشر أي جزء من هذه الألعاب أو محتواها دون إذن مسبق من صاحبها. -->
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="author" content="أحمد حازم عبد الله">
+<meta name="copyright" content="© ٢٠٢٦ أحمد حازم عبد الله — جميع الحقوق محفوظة. لا يجوز نسخ أو استخدام أو إعادة نشر أي جزء من هذه الألعاب أو محتواها دون إذن مسبق من صاحبها.">
+</head>
+<body>
+<title>بيت الأعداد</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;700;800&family=Lalezar&display=swap">
+<style>
+:root{
+  /* Layout: menus on the platform's night glass; each activity is a bright full-screen play table the child stretches and squashes by hand.
+     Long = warm orange band, short = teal band, used the same way in every activity. */
+  --night:#0a1030; --glass:rgba(11,17,50,.82); --glass2:rgba(255,255,255,.08); --line:rgba(255,255,255,.18);
+  --ink:#f7f4ff; --muted:#b9c0ea; --gold:#ffc83a; --long:#ff8a3d; --short:#14b8a6;
+  --display:'Lalezar','Baloo Bhaijaan 2',Tahoma,sans-serif; --body:'Baloo Bhaijaan 2',Tahoma,'Segoe UI',sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var(--ink);font-family:var(--body);-webkit-user-select:none;user-select:none}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;line-height:1.15;text-wrap:balance}
+p{margin:0;line-height:1.6}
+button{font-family:var(--body);color:inherit}
+:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.screen{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;padding-block:20px;padding-inline:16px;display:flex;align-items:center;justify-content:center;z-index:10;background:radial-gradient(ellipse at 20% 0%,#24307a 0%,var(--night) 60%)}
+.panel{background:var(--glass);border:1px solid var(--line);border-radius:28px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.wrap{width:min(980px,100%);padding:24px;display:flex;flex-direction:column;gap:18px;margin-block:auto}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:19px;font-weight:700;color:var(--ink);background:var(--glass2);border:1px solid var(--line);border-radius:16px;padding:10px 16px;cursor:pointer;text-decoration:none}
+.btn:hover,.btn:focus-visible{background:rgba(255,255,255,.15)}
+.btn.primary{background:linear-gradient(180deg,#ffd75e,#ff9f1c);color:#2a1600;border-color:transparent;box-shadow:0 6px 0 #b8620a}
+.btn.sm{font-size:15px;padding:7px 12px}
+.eyebrow{font-size:15px;color:var(--gold);font-weight:700}
+.title{font-family:var(--display);font-size:clamp(48px,10vw,88px);line-height:1;background:linear-gradient(180deg,#fff 10%,#ffd96b 55%,#ff9a1f);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 5px 0 rgba(80,30,0,.55))}
+.title .l{letter-spacing:.12em}
+.lead{color:var(--muted);font-size:18px;max-width:60ch}
+.acts{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.act{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:right;padding:18px;border-radius:24px;border:2px solid rgba(255,255,255,.18);background:linear-gradient(160deg,var(--a),var(--b));cursor:pointer;min-width:0;box-shadow:inset 0 -50px 60px rgba(0,0,0,.22);transition:transform .15s}
+.act:hover,.act:focus-visible{transform:translateY(-4px)}
+.act .ic{font-size:46px;line-height:1}
+.act h3{font-size:26px;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.3)}
+.act p{font-size:14px;color:#fff;opacity:.95;line-height:1.45}
+.act .pr{font-size:14px;font-weight:800;background:rgba(0,0,0,.25);padding:3px 10px;border-radius:999px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.note{color:var(--muted);font-size:14px;line-height:1.6}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{font-size:15px;font-weight:700;padding:7px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.2);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--gold);color:#2a1600;border-color:var(--gold)}
+
+/* stage */
+#stage{position:fixed;inset:0;overflow:hidden;touch-action:none}
+#stage svg.scene{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.grass{background:linear-gradient(180deg,#8fd6ff 0%,#dff4ff 42%,#8fd36a 42%,#5fb444 100%)}
+.yard{background:linear-gradient(180deg,#ffe3c2 0%,#fff3e3 55%,#e9c48f 55%,#d9a96a 100%)}
+.rail{background:linear-gradient(180deg,#7fc8ff 0%,#d8f0ff 50%,#a7d38a 50%,#86bd65 100%)}
+.trail{background:linear-gradient(180deg,#6ec6ff 0%,#cdeeff 60%,#c9a46a 60%,#b08850 100%)}
+.hud{position:fixed;z-index:20;top:calc(10px + env(safe-area-inset-top,0px));inset-inline:12px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;pointer-events:none}
+.hud>*{pointer-events:auto}
+.goal{display:flex;align-items:center;gap:12px;padding:8px 18px 8px 12px;border-radius:22px;background:rgba(255,255,255,.94);color:#1a1a2e;box-shadow:0 8px 24px rgba(0,0,0,.18);font-size:clamp(20px,3.4vw,30px);font-weight:800;max-width:calc(100% - 140px)}
+.goal .tag{padding:2px 14px;border-radius:999px;color:#fff;font-size:.9em}
+.goal .tag.long{background:var(--long)}.goal .tag.short{background:var(--short)}
+.steps{display:flex;gap:6px}
+.steps i{width:14px;height:14px;border-radius:50%;background:rgba(0,0,0,.15)}
+.steps i.on{background:#ffb300;box-shadow:0 0 8px #ffb300}
+.tools{display:flex;gap:8px}
+.ib{width:52px;height:52px;border-radius:16px;border:0;background:rgba(255,255,255,.94);color:#1a1a2e;font-size:22px;cursor:pointer;display:grid;place-items:center;box-shadow:0 6px 16px rgba(0,0,0,.18)}
+.say{position:fixed;z-index:25;left:50%;top:40%;transform:translate(-50%,-50%);font-family:var(--display);font-size:clamp(60px,12vw,140px);line-height:1.1;white-space:nowrap;pointer-events:none;text-shadow:0 6px 0 rgba(0,0,0,.18),0 0 30px rgba(255,255,255,.95);animation:sayin 1.5s ease-out forwards}
+@keyframes sayin{0%{transform:translate(-50%,-50%) scale(.3);opacity:0}18%{transform:translate(-50%,-50%) scale(1.12);opacity:1}75%{opacity:1}100%{transform:translate(-50%,-62%) scale(1);opacity:0}}
+.tip{position:fixed;z-index:24;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);padding:12px 22px;border-radius:20px;background:rgba(255,255,255,.95);color:#1a1a2e;font-size:clamp(18px,2.6vw,24px);font-weight:800;box-shadow:0 10px 26px rgba(0,0,0,.2);max-width:calc(100% - 32px);text-align:center;pointer-events:none}
+.tip.fix{background:#fff3cd;border:3px solid #ffb300}
+#cursor{position:fixed;z-index:31;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;border:4px solid #fff;box-shadow:0 0 0 3px #1a1a2e,0 0 20px #fff;pointer-events:none}
+.wiggle{animation:wig .9s ease-in-out 2}
+@keyframes wig{25%{transform:rotate(-2deg) translateY(-6px)}75%{transform:rotate(2deg) translateY(4px)}}
+.pulse{animation:pls 1s ease-in-out infinite}
+@keyframes pls{50%{opacity:.35}}
+.arrow{animation:arw .8s ease-in-out infinite}
+@keyframes arw{50%{transform:translateX(var(--ax,-18px)) translateY(var(--ay,0))}}
+
+/* ride */
+.choices{position:fixed;z-index:22;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;gap:clamp(14px,4vw,40px);padding:22px;border-radius:30px;background:rgba(255,255,255,.95);box-shadow:0 20px 50px rgba(0,0,0,.3);flex-direction:column;align-items:center;color:#1a1a2e}
+.choices h3{font-size:clamp(24px,4vw,34px)}
+.choices .opts{display:flex;gap:clamp(14px,4vw,36px)}
+.opt{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;width:clamp(140px,22vw,200px);height:clamp(170px,26vw,240px);border-radius:24px;border:5px solid transparent;cursor:pointer;font-size:24px;font-weight:800;color:#fff;box-shadow:0 8px 0 rgba(0,0,0,.2);padding-bottom:10px}
+.opt.long{background:linear-gradient(180deg,#ffb37a,var(--long))}.opt.short{background:linear-gradient(180deg,#5fe0d0,var(--short))}
+.opt .em{line-height:1}
+.opt.long .em{font-size:clamp(90px,14vw,130px)}.opt.short .em{font-size:clamp(50px,8vw,70px)}
+.opt.hint{animation:hint 1s infinite}
+@keyframes hint{50%{box-shadow:0 0 0 8px #fff,0 0 34px #fff}}
+.opt.no{animation:shake .4s}
+@keyframes shake{25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
+.rider{position:absolute;transition:transform .5s cubic-bezier(.3,1.5,.5,1)}
+.beast{position:absolute;line-height:1;transition:font-size .5s cubic-bezier(.3,1.5,.5,1);filter:drop-shadow(0 10px 8px rgba(0,0,0,.25))}
+.kid{position:absolute;line-height:1;font-size:56px;transition:bottom .5s cubic-bezier(.3,1.5,.5,1)}
+.poof{position:absolute;font-size:90px;pointer-events:none;animation:poof .6s ease-out forwards}
+@keyframes poof{from{transform:translate(-50%,-50%) scale(.3);opacity:1}to{transform:translate(-50%,-50%) scale(1.8);opacity:0}}
+.flymedal{position:fixed;z-index:30;font-size:70px;pointer-events:none;transition:all .9s cubic-bezier(.5,0,.3,1)}
+.endcard{width:min(520px,100%);padding:26px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
+.bigstars{font-size:58px;letter-spacing:6px;color:rgba(255,255,255,.2)}.bigstars b{color:var(--gold);font-weight:400}
+.toast{position:fixed;z-index:60;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);padding:10px 18px;font-size:16px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* concept games: light rendering (no blur), shared pieces */
+.panel{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:rgba(14,20,58,.96)}
+.obj{position:absolute;line-height:1;user-select:none;-webkit-user-select:none;filter:drop-shadow(0 8px 6px rgba(0,0,0,.22));transition:transform .3s}
+.drag{cursor:grab;touch-action:none}
+.dragging{z-index:40!important;cursor:grabbing;transform:scale(1.12);transition:none}
+.glow{animation:glw 1s ease-in-out infinite}
+@keyframes glw{50%{filter:drop-shadow(0 0 14px #fff) drop-shadow(0 0 26px #ffd75e)}}
+.zone{position:absolute;border:5px dashed rgba(255,255,255,.85);border-radius:28px;background:rgba(255,255,255,.18);transition:opacity .3s}
+.zone.on{animation:zon 1s ease-in-out infinite}
+@keyframes zon{50%{background:rgba(255,235,120,.42)}}
+.lbl{position:absolute;padding:4px 16px;border-radius:999px;background:#fff;color:#1a1a2e;font-weight:800;font-size:clamp(18px,2.6vw,26px);box-shadow:0 5px 0 rgba(0,0,0,.18);transform:translateX(-50%);white-space:nowrap}
+.opts2{position:fixed;z-index:22;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;gap:clamp(10px,2.5vw,22px);justify-content:center;flex-wrap:wrap;max-width:calc(100% - 20px)}
+.opt2{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:clamp(118px,18vw,170px);padding:10px 16px 12px;border-radius:24px;border:4px solid #fff;background:var(--c);color:#fff;font-size:clamp(20px,3vw,28px);font-weight:800;cursor:pointer;box-shadow:0 7px 0 rgba(0,0,0,.28);text-shadow:0 2px 0 rgba(0,0,0,.25)}
+.opt2 .em{font-size:clamp(40px,6vw,58px);line-height:1.15;text-shadow:none}
+.opt2:active{transform:translateY(4px);box-shadow:0 3px 0 rgba(0,0,0,.28)}
+.opt2.hint{animation:hint 1s infinite}.opt2.no{animation:shake .4s}
+#sayit{position:fixed;inset:0;z-index:45;display:grid;place-items:center;background:rgba(6,10,34,.55);padding:16px}
+.sayp{padding:22px 26px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;max-width:520px}
+.sayp .sw{font-family:var(--display);font-size:clamp(64px,13vw,110px);line-height:1.15;color:var(--gold)}
+.sky{background:linear-gradient(180deg,#5ab8ff 0%,#bfe6ff 70%,#9ed27a 70%,#6fb54a 100%)}
+.field{background:linear-gradient(180deg,#7cc9ff 0%,#d6f0ff 34%,#6cc04a 34%,#3f9a2f 100%)}
+.room{background:linear-gradient(180deg,#fde7c8 0%,#fff4e4 62%,#c99b6d 62%,#b5844f 100%)}
+.factory{background:linear-gradient(180deg,#cfd8e3 0%,#eef2f6 55%,#9aa7b5 55%,#7d8b9a 100%)}
+.cityroad{background:#6fbf5a}
+.dn{background:linear-gradient(90deg,#0c1446 0%,#1d2a72 50%,#7cc9ff 50%,#cfeeff 100%)}
+.bump{animation:bmp .5s}
+@keyframes bmp{30%{transform:translateY(-14px) scale(1.08)}}
+.thud{animation:thd .5s}
+@keyframes thd{20%{transform:translateY(6px)}40%{transform:translateX(-6px)}60%{transform:translateX(6px)}}
+</style>
+<section id="menu" class="screen" hidden dir="rtl">
+  <div class="wrap panel">
+    <div class="eyebrow" id="mEyebrow"></div>
+    <div class="title" id="mTitle"></div>
+    <p class="lead" id="mLead"></p>
+    <div class="acts" id="acts"></div>
+    <div class="row"><span class="note">الوضع الهادئ:</span><div class="seg" data-key="calm"><button data-v="false">عادي</button><button data-v="true">هادئ</button></div><span class="note">النطق:</span><div class="seg" data-key="voice"><button data-v="true">مفعّل</button><button data-v="false">مطفأ</button></div></div>
+    <div class="row"><span class="note">🎤 تدريب «يسمّي» (يقول الطالب الكلمة بعد كل إجابة):</span><div class="seg" data-key="say"><button data-v="false">مطفأ</button><button data-v="true">مفعّل</button></div></div>
+    <p class="note" id="voiceNote"></p>
+    <div class="row"><a class="btn sm" id="mainLink" href="index.html" target="_top">🏠 العودة إلى المنصة</a></div>
+  </div>
+</section>
+
+<section id="end" class="screen" hidden dir="rtl">
+  <div class="endcard panel"><h2 id="eTitle"></h2><div class="bigstars" id="eStars"></div><p id="eMsg" style="font-size:19px"></p><div class="row" style="justify-content:center" id="eBtns"></div></div>
+</section>
+
+<div id="stage" hidden></div>
+<div class="hud" id="hud" hidden dir="rtl">
+  <div class="goal" id="goal"></div>
+  <div class="tools"><button class="ib" id="bSay" aria-label="اسمع">🔊</button><button class="ib" id="bHome" aria-label="القائمة">🏠</button></div>
+</div>
+<div class="opts2" id="opts" hidden dir="rtl"></div>
+<div class="tip" id="tip" hidden dir="rtl"></div>
+<div id="sayit" hidden></div>
+<div id="cursor" hidden></div>
+<div class="toast panel" id="toast" hidden></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- shared engine for the 2D concept games (light: DOM + CSS only, no 3D) ---------- */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const AR=n=>Number(n).toLocaleString('ar-EG');
+const rnd=Math.random, pick=a=>a[(rnd()*a.length)|0], clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=(rnd()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]];}return a;};
+const store={get(k,d){try{const v=localStorage.getItem(META.prefix+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem(META.prefix+k,JSON.stringify(v));}catch(e){}}};
+let S={calm:false,voice:true,say:false}, PR={};
+const save=()=>store.set('progress',PR);
+const NS='http://www.w3.org/2000/svg';
+function el(tag,attrs,parent){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); if(parent) parent.appendChild(e); return e; }
+function h(tag,attrs,html,parent){ const e=document.createElement(tag); for(const k in (attrs||{})) e.setAttribute(k,attrs[k]); if(html!=null) e.innerHTML=html; if(parent) parent.appendChild(e); return e; }
+// an emoji / picture object placed on the stage (left/top in px, size in px)
+function obj(em,x,y,size,cls,parent){ const e=h('div',{class:'obj '+(cls||'')},em,parent||stage); place(e,x,y,size); return e; }
+function place(e,x,y,size){ e.style.left=Math.round(x)+'px'; e.style.top=Math.round(y)+'px'; if(size) e.style.fontSize=Math.round(size)+'px'; }
+function css(t){ const s=document.createElement('style'); s.textContent=t; document.head.appendChild(s); }
+const center=e=>{ const r=e.getBoundingClientRect(); return [r.left+r.width/2,r.top+r.height/2]; };
+const hit=(x,y,e,pad)=>{ pad=pad||0; const r=e.getBoundingClientRect(); return x>=r.left-pad&&x<=r.right+pad&&y>=r.top-pad&&y<=r.bottom+pad; };
+
+/* ---------- sound & speech ---------- */
+const Snd=(()=>{ let ctx=null,out,nb; function init(){ if(ctx) return; try{ ctx=new (window.AudioContext||window.webkitAudioContext)(); out=ctx.createGain(); out.gain.value=.85; out.connect(ctx.destination); nb=ctx.createBuffer(1,ctx.sampleRate,ctx.sampleRate); const d=nb.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=rnd()*2-1; }catch(e){ctx=null;} }
+ const V=v=>v*(S.calm?.45:1);
+ function tone(f,d,type,v,w,to){ if(!ctx) return; if(ctx.state==='suspended') ctx.resume().catch(()=>{}); const t=ctx.currentTime+(w||0), o=ctx.createOscillator(), g=ctx.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,t); if(to) o.frequency.exponentialRampToValueAtTime(to,t+d); g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(V(v||.2),t+.01); g.gain.exponentialRampToValueAtTime(.0001,t+d); o.connect(g); g.connect(out); o.start(t); o.stop(t+d+.05); }
+ function noise(d,v,type,f){ if(!ctx) return; const t=ctx.currentTime, s=ctx.createBufferSource(); s.buffer=nb; const fl=ctx.createBiquadFilter(); fl.type=type; fl.frequency.value=f; const g=ctx.createGain(); g.gain.setValueAtTime(V(v),t); g.gain.exponentialRampToValueAtTime(.0001,t+d); s.connect(fl); fl.connect(g); g.connect(out); s.start(t); s.stop(t+d+.05); }
+ const FX={ ok(){ [784,988,1175,1568].forEach((f,i)=>tone(f,.25,'triangle',.2,i*.07)); }, no(){ tone(300,.25,'sine',.15,0,200); }, win(){ [523,659,784,1047,784,1047,1319].forEach((f,i)=>tone(f,.32,'triangle',.18,i*.12)); },
+  pop(){ tone(500,.12,'sine',.18,0,1200); }, thud(){ noise(.25,.35,'lowpass',260); tone(90,.3,'sine',.3,0,45); }, whoosh(){ noise(.45,.22,'bandpass',900); }, place(){ tone(1200,.08,'square',.06); tone(1800,.2,'triangle',.12,.05); },
+  boing(){ tone(180,.35,'sine',.22,0,520); }, chug(){ noise(.12,.18,'lowpass',500); }, whistle(){ tone(880,.5,'square',.06); tone(1046,.5,'square',.05); }, kick(){ noise(.1,.4,'lowpass',400); tone(160,.12,'sine',.3,0,80); }, cheer(){ noise(1.2,.12,'bandpass',1800); [523,659,784].forEach((f,i)=>tone(f,.4,'triangle',.12,i*.1)); } };
+ return {init,play(n){ init(); FX[n]&&FX[n](); }}; })();
+const Speech={voice:null,init(){const p=()=>{try{const vs=speechSynthesis.getVoices();this.voice=vs.find(v=>/^ar/i.test(v.lang))||null;$('#voiceNote').textContent=this.voice?'الصوت: '+this.voice.name:'لا يوجد صوت عربي مثبّت في الجهاز؛ ستظهر الكلمات مكتوبة كبيرة على الشاشة.';}catch(e){}};p();try{speechSynthesis.onvoiceschanged=p;}catch(e){}},
+ say(t,rate){ if(!S.voice||!this.voice) return; try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.voice=this.voice; u.lang=this.voice.lang; u.rate=rate||.8; u.pitch=1.1; speechSynthesis.speak(u);}catch(e){} }};
+function bigWord(text,color){ const d=document.createElement('div'); d.className='say'; d.textContent=text; d.style.color=color||'#ff7a1a'; document.body.appendChild(d); setTimeout(()=>d.remove(),1600); }
+function praise(word,color){ Snd.play('ok'); rumble(200,.3,.7); bigWord('ممتاز! '+word,color); Speech.say('ممتاز! '+word); }
+// the tip never covers the answer cards: it sits just above them, and fades away by itself
+function tip(text,fix){ const t=$('#tip'); clearTimeout(tip.h); t.textContent=text; t.className='tip'+(fix?' fix':''); t.hidden=!text; placeTip(); if(text) tip.h=setTimeout(()=>{ t.hidden=true; },fix?7000:5000); }
+function placeTip(){ const t=$('#tip'), o=$('#opts'); t.style.bottom=(o&&!o.hidden&&o.offsetHeight)?(innerHeight-o.getBoundingClientRect().top+10)+'px':''; }
+function toast(t){ const e=$('#toast'); e.textContent=t; e.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>e.hidden=true,2600); }
+const starsHTML=n=>[0,1,2].map(i=>i<n?'<b>★</b>':'★').join('');
+const stepsHTML=(n,of)=>`<span class="steps">${Array.from({length:of},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</span>`;
+const setGoal=html=>$('#goal').innerHTML=html;
+const starsFor=(f,t)=>f>=t*.85?3:f>=t*.6?2:1;
+// timers that die with the activity (nothing keeps running in the background)
+const T={ids:[],set(f,ms){ const id=setTimeout(()=>{ T.ids=T.ids.filter(x=>x!==id); f(); },ms); T.ids.push(id); return id; },clear(){ T.ids.forEach(clearTimeout); T.ids=[]; }};
+// errorless order: the first kind alone, then the second, then mixed
+const seq2=(a,b,n)=>{ const s=[a,a,a,b,b,b]; while(s.length<(n||10)) s.push(rnd()<.5?a:b); return s; };
+const aidOf=id=>{ const ok=(PR[id]&&PR[id].ok)||0; return ok<4?0:ok<10?1:2; };
+
+/* ---------- screens ---------- */
+let mode=null, A=null;
+const stage=$('#stage');
+function showMenu(){ stopAct(); $('#menu').hidden=false; $('#end').hidden=true; refreshMenu(); setTimeout(()=>{ try{ $('#menu .act').focus({preventScroll:true}); }catch(e){} },50); }
+function refreshMenu(){ ACTS.forEach((a,i)=>{ const p=PR[a.id]||{}, e=$('#pr-'+a.id); if(e) e.textContent=p.stars?'★'.repeat(p.stars):i===0?'ابدأ هنا':'—'; });
+ $$('.seg').forEach(sg=>sg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(String(S[sg.dataset.key])===b.dataset.v)))); }
+function startAct(id){ Snd.init(); stopAct(); const a=ACTS.find(x=>x.id===id); if(!a) return showMenu(); mode=id; $('#menu').hidden=true; $('#end').hidden=true; stage.hidden=false; $('#hud').hidden=false; stage.innerHTML=''; stage.className=''; A=a.g; A.start(a); }
+function stopAct(){ T.clear(); if(A&&A.stop) try{ A.stop(); }catch(e){} stage.hidden=true; stage.innerHTML=''; $('#hud').hidden=true; tip(''); closeOpts(); closeSay(); $$('.say').forEach(e=>e.remove()); mode=null; A=null; DM.el=null; try{speechSynthesis.cancel();}catch(e){} }
+function endCard(title,stars,msgText,btns){ stopAct(); Snd.play('win'); $('#eTitle').textContent=title; $('#eStars').innerHTML=starsHTML(stars); $('#eMsg').textContent=msgText; $('#eBtns').innerHTML=btns.map(([g,t,c])=>`<button class="btn ${c||''}" data-go="${g}">${t}</button>`).join(''); $('#end').hidden=false; Speech.say(title); setTimeout(()=>{ try{ $('#eBtns button').focus(); }catch(e){} },50); }
+function finishAct(id,title,first,total){ const st=starsFor(first,total); PR[id]=PR[id]||{}; PR[id].stars=Math.max(PR[id].stars||0,st); save(); const i=ACTS.findIndex(a=>a.id===id), nx=ACTS[i+1];
+ endCard(title,st,`نجحت ${AR(first)} من ${AR(total)} مرات من أول محاولة.`,[[id,'مرة أخرى','primary']].concat(nx?[[nx.id,'التالي: '+nx.t]]:[],[['menu','القائمة']])); }
+// a run of rounds: R.go() starts the next one, R.win() / R.miss() score it
+function run(id,total,title,setup){ const R={i:0,total,first:0,tries:0,busy:false};
+ R.go=()=>{ if(R.i>=R.total){ finishAct(id,title,R.first,R.total); return; } R.tries=0; R.busy=false; closeOpts(); setup(R); };
+ R.win=(word,color,wait,alts)=>{ if(R.busy) return; R.busy=true; if(R.tries===0) R.first++; PR[id]=PR[id]||{}; PR[id].ok=(PR[id].ok||0)+1; save(); praise(word,color); R.i++; T.set(()=>{ tip(''); sayIt(word,()=>T.set(R.go,350),alts); },wait||1500); };
+ R.miss=msg=>{ R.tries++; Snd.play('no'); rumble(90,.1,.1); if(msg){ tip(msg,true); Speech.say(msg); } };
+ R.steps=()=>stepsHTML(R.i,R.total);
+ return R; }
+
+/* ---------- answer cards at the bottom of the screen ---------- */
+function opts(list,onPick){ const box=$('#opts'); box.style.direction=''; box.innerHTML=list.map((o,i)=>`<button class="opt2" data-i="${i}" data-v="${o.v}" style="--c:${o.color||'#3fa9ff'}">${o.em?`<span class="em">${o.em}</span>`:''}<b>${o.label}</b></button>`).join(''); box.hidden=false; placeTip();
+ box.onclick=e=>{ const b=e.target.closest('[data-i]'); if(b) onPick(list[+b.dataset.i].v,b); }; setTimeout(()=>{ try{ box.querySelector('button').focus({preventScroll:true}); }catch(e){} },30); }
+function closeOpts(){ const b=$('#opts'); b.hidden=true; b.innerHTML=''; b.onclick=null; placeTip(); }
+function shake(b){ if(!b) return; b.classList.remove('no'); void b.offsetWidth; b.classList.add('no'); }
+const optBtn=v=>$(`#opts [data-v="${v}"]`);
+
+/* ---------- drag & drop (finger, mouse, or the PlayStation cursor) ---------- */
+const DM={el:null,dx:0,dy:0,ox:'',oy:'',
+ start(e,x,y){ const r=e.getBoundingClientRect(); this.el=e; this.dx=x-r.left; this.dy=y-r.top; this.ox=e.style.left; this.oy=e.style.top; e.classList.add('dragging'); e.classList.remove('glow'); tip(''); },
+ move(x,y){ const e=this.el; if(!e) return; const pr=(e.offsetParent||stage).getBoundingClientRect(); e.style.left=(x-this.dx-pr.left)+'px'; e.style.top=(y-this.dy-pr.top)+'px'; },
+ end(x,y){ const e=this.el; if(!e) return; this.el=null; e.classList.remove('dragging'); const ok=e._drop?e._drop(x,y,e):false; if(!ok) this.back(e); },
+ back(e){ e.style.transition='left .35s,top .35s'; e.style.left=this.ox; e.style.top=this.oy; setTimeout(()=>e.style.transition='',380); } };
+function draggable(e,onDrop){ e.classList.add('drag'); e._drop=onDrop; return e; }
+
+/* ---------- «قل الكلمة» 🎤: the naming goals (يسمّي) ---------- */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+const norm=s=>String(s).replace(/[ً-ْـ]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').replace(/\s+/g,' ').trim();
+function closeSay(){ const b=$('#sayit'); if(b){ b.hidden=true; b.innerHTML=''; } }
+function sayIt(word,done,alts){ if(!S.say){ done(); return; } const b=$('#sayit');
+ b.innerHTML=`<div class="panel sayp" dir="rtl"><p>قُل الكلمة بصوتك 🗣️</p><div class="sw">${word}</div><div class="row" style="justify-content:center">${SR?'<button class="btn primary" id="sMic">🎤 اضغط وقُل</button>':''}<button class="btn" id="sOk">✅ نطقها</button><button class="btn sm" id="sSkip">تخطّي</button></div><p class="note" id="sMsg">${SR?'زر ✅ للمعلم إن نطقها الطالب ولم يسمعها الجهاز.':'المعلم يضغط ✅ عندما ينطق الطالب الكلمة.'}</p></div>`;
+ b.hidden=false; Speech.say(word); let done1=false;
+ const fin=ok=>{ if(done1) return; done1=true; closeSay(); if(ok){ Snd.play('cheer'); bigWord('👏 '+word,'#2e9d3a'); PR._said=(PR._said||0)+1; save(); } T.set(done,ok?900:100); };
+ $('#sOk').onclick=()=>fin(true); $('#sSkip').onclick=()=>fin(false);
+ if(SR) $('#sMic').onclick=()=>{ try{ const r=new SR(); r.lang='ar-SA'; r.interimResults=false; r.maxAlternatives=5; $('#sMsg').textContent='🎧 أستمع…'; $('#sMic').disabled=true;
+  r.onresult=e=>{ const heard=[...e.results[0]].map(a=>norm(a.transcript)); const w=norm(word).replace(/^ال/,''); if(heard.some(a=>a.includes(w)||(alts||[]).some(x=>a.includes(norm(x))))) fin(true); else { $('#sMsg').textContent='سمعت: «'+e.results[0][0].transcript+'». حاول مرة أخرى 🙂'; Snd.play('no'); } };
+  r.onerror=()=>{ $('#sMsg').textContent='لم أسمع جيدًا. حاول مرة أخرى، أو يضغط المعلم ✅'; }; r.onend=()=>{ const m=$('#sMic'); if(m) m.disabled=false; }; r.start(); }catch(e){ $('#sMsg').textContent='الميكروفون غير متاح هنا؛ يضغط المعلم ✅.'; } }; }
+
+/* ---------- numbers shared by the number games (Montessori bead colours, Arabic-Indic digits) ---------- */
+const NUM=n=>Number(n).toLocaleString('ar-EG');
+const NNAME=['صفر','واحد','اثنان','ثلاثة','أربعة','خمسة','ستة','سبعة','ثمانية','تسعة','عشرة','أحد عشر','اثنا عشر','ثلاثة عشر','أربعة عشر','خمسة عشر','ستة عشر','سبعة عشر','ثمانية عشر','تسعة عشر','عشرون'];
+const MONT=['#9e9e9e','#e53935','#2e9d3a','#f06292','#fdd835','#4fc3f7','#8e24aa','#f5f5f5','#8d6e63','#1a3fb0','#ffb300'];
+const MCOL=n=>n>10?MONT[n-10]:MONT[n];               // the colour of a number's own beads
+const TXT=n=>(n%10===7&&n<20)||n===7?'#607d8b':(n>10?MONT[n-10]:MONT[n]); // readable text colour (white 7 gets a grey)
+const NOBJ=['','✏️','🚩','🍴','🐍','🥚','🔨','🍦','⛺','🍭','✏️⚽'];
+// a bead bar like the Montessori material: n beads of the number's colour (10 = the golden ten bar)
+function beads(n,size,vertical){ const c=n===10?'#ffb300':MONT[n]; const b=`<i style="width:${size}px;height:${size}px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff8 0 18%,${c} 22%);box-shadow:inset 0 -${size*.12}px 0 rgba(0,0,0,.18);border:2px solid rgba(0,0,0,.18)"></i>`;
+ return `<span class="bbar" style="display:inline-flex;flex-direction:${vertical?'column-reverse':'row'};gap:2px;padding:3px;border-radius:${size}px;background:rgba(0,0,0,.12)">${b.repeat(n)}</span>`; }
+// teen numbers: the golden ten bar plus the extra beads
+const teen=(n,size)=>n<=10?beads(n,size):`<span style="display:inline-flex;gap:6px;align-items:center">${beads(10,size)}${beads(n-10,size)}</span>`;
+const sayNum=n=>Speech.say(NNAME[n],.8);
+
+/* ---------- بيت الأعداد: مكونات العدد (الجزء والجزء والكل) ---------- */
+const META={prefix:'math14_',title:'بيت الأعداد',eyebrow:'الرياضيات · مكونات العدد (٢–١٠)',lead:'لكل عدد بيت له جهتان: نضع الشبابيك يمينًا ويسارًا فنكتشف أن ٤ = ٢ و ٢ = ٣ و ١، ثم نبحث عن الشبابيك الناقصة، ونعرف كم شباكًا في البيت كله.'};
+css(`.house{position:absolute;left:50%;transform:translateX(-50%);--ws:44px;display:flex;flex-direction:column;align-items:center}
+.roof{width:calc(var(--ws)*4 + 150px);height:calc(var(--ws)*2.2);clip-path:polygon(50% 0,100% 100%,0 100%);background:linear-gradient(#ef5350,#b71c1c);display:flex;align-items:flex-end;justify-content:center;margin-bottom:-2px}
+.roof b{display:grid;place-items:center;width:calc(var(--ws)*1.55);height:calc(var(--ws)*1.55);margin-bottom:8px;border-radius:50%;background:#fff;color:#1a1a2e;font-family:var(--display);font-size:calc(var(--ws)*1.25);line-height:1}
+.hbody{display:flex;direction:rtl;border:6px solid #6d4c41;border-top-width:8px;border-radius:0 0 12px 12px;box-shadow:0 12px 0 rgba(0,0,0,.18);overflow:hidden}
+.half{display:grid;grid-template-columns:repeat(2,var(--ws));grid-auto-rows:var(--ws);gap:10px;align-content:end;justify-content:center;padding:14px 16px;width:calc(var(--ws)*2 + 42px);cursor:pointer}
+.half.r{background:#ffe3c2}.half.l{background:#d3ecff;border-inline-start:6px solid #6d4c41}
+.win{display:block;position:relative;width:var(--ws);height:var(--ws);border-radius:6px;border:4px solid #6d4c41;background:linear-gradient(135deg,#fffde7,#ffd54f);box-shadow:0 0 16px #ffe082}
+.win::before,.win::after{content:'';position:absolute;background:#6d4c41}.win::before{left:50%;top:0;bottom:0;width:3px;margin-left:-1.5px}.win::after{top:50%;left:0;right:0;height:3px;margin-top:-1.5px}
+.win.ghost{background:rgba(255,255,255,.45);border-style:dashed;border-color:rgba(0,0,0,.3);box-shadow:none}.win.ghost::before,.win.ghost::after{display:none}
+.win.off{width:calc(var(--ws)*.8);height:calc(var(--ws)*.8);background:#90a4ae;box-shadow:none}
+.win.pop{animation:pop14 .35s}@keyframes pop14{from{scale:.2}}
+.hcnt{display:flex;direction:rtl;justify-content:space-between;width:100%;padding:8px 14px 0}.hcnt span{min-width:1.5em;padding:2px 12px;border-radius:14px;background:#fff;color:#1a1a2e;font-family:var(--display);font-size:calc(var(--ws)*1.05);line-height:1.1;text-align:center;box-shadow:0 4px 0 rgba(0,0,0,.15)}
+.tray{position:absolute;left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:92vw;--ws:40px}
+.win b.num{position:absolute;inset:3px;z-index:1;display:grid;place-items:center;border-radius:3px;background:rgba(255,255,255,.88);font-family:var(--display);font-size:calc(var(--ws)*.55);line-height:1;color:#1a1a2e}.half.no{animation:shake .4s}
+.qm{grid-column:1/-1;align-self:center;justify-self:center;font-family:var(--display);font-size:calc(var(--ws)*2);line-height:1;color:#1e6fd9}`);
+const wsz=()=>Math.round(Math.max(28,Math.min(60,innerHeight*.072,innerWidth*.09)));
+const win=g=>`<i class="win${g?' ghost':''}"></i>`;
+const eqText=(n,a,b)=>`${NUM(n)} = ${NUM(a)} و ${NUM(b)}`;
+const eqSay=(n,a,b)=>`${NNAME[a]} و ${NNAME[b]} تساوي ${NNAME[n]}`;
+// the house: a roof with the number, a right half and a left half, and a count under each half
+function makeHouse(G,n,label){ const W=wsz(); G.hs=h('div',{class:'house'},`<div class="roof"><b>${label}</b></div><div class="hbody"><div class="half r" data-side="r"></div><div class="half l" data-side="l"></div></div><div class="hcnt"><span class="cr"></span><span class="cl"></span></div>`,stage);
+ G.hs.style.setProperty('--ws',W+'px'); G.hs.style.top=(innerHeight*.1)+'px'; G.hr=G.hs.querySelector('.half.r'); G.hl=G.hs.querySelector('.half.l'); G.roof=G.hs.querySelector('.roof b');
+ const rows=Math.max(2,Math.ceil(n/2)); [G.hr,G.hl].forEach(e=>e.style.minHeight=(rows*W+(rows-1)*10+28)+'px'); }
+const setCounts=(G,a,b)=>{ G.hs.querySelector('.cr').textContent=a; G.hs.querySelector('.cl').textContent=b; };
+
+// difficulty steps shown on the goal bar
+const LV=[['سهل جدًا','#2e9d3a'],['سهل','#1e88e5'],['متوسط','#ff8a3d'],['تحدٍّ','#e53935']];
+const lvTag=k=>`<span class="tag" style="background:${LV[k][1]}">${LV[k][0]}</span>`;
+// the corrector: number the windows one by one, saying each number, then go on
+function countUp(G,list,done){ list.forEach((e,i)=>T.set(()=>{ e.classList.remove('ghost'); e.innerHTML=`<b class="num">${NUM(i+1)}</b>`; Snd.play('pop'); Speech.say(NNAME[i+1],1.1); },i*700)); T.set(done,list.length*700+300); }
+const sideShake=e=>{ e.classList.remove('no'); void e.offsetWidth; e.classList.add('no'); };
+
+// 🏠 share the windows — step 1: dashed windows show exactly where; step 2: a number under each side;
+// step 3: any way you like; step 4: a new way for the same number
+const SPLIT=[{n:2,a:1,m:'ghost'},{n:3,a:2,m:'ghost'},{n:3,a:1,m:'ghost'},{n:4,a:2,m:'ghost'},{n:4,a:3,m:'target'},{n:5,a:2,m:'target'},{n:5,m:'free'},{n:6,m:'free'},{n:6,m:'new'},{n:8,m:'free'}];
+const Split={ start(){ stage.className='sky'; this.used={}; this.R=run('split',SPLIT.length,'مهندس البيوت! 🏠',R=>this.round(R)); this.R.go(); },
+ round(R){ const L=this.L=SPLIT[R.i], n=this.n=L.n; this.A=L.a; this.B=L.a!=null?n-L.a:null; this.a=0; this.b=0; stage.innerHTML=''; makeHouse(this,n,NUM(n));
+  this.tray=h('div',{class:'tray'},'',stage); this.tray.style.top=(this.hs.getBoundingClientRect().bottom+14)+'px'; this.draw();
+  const k={ghost:0,target:1,free:2,new:3}[L.m];
+  this.q=L.m==='ghost'?`ضع الشبابيك مكان الشبابيك المنقّطة`:L.m==='target'?`ضع ${NNAME[this.A]} في اليمين و${NNAME[this.B]} في اليسار`:L.m==='new'?`بيت ${NNAME[n]} مرة أخرى: ضع الشبابيك بطريقة جديدة`:`بيت ${NNAME[n]}: ضع الشبابيك يمينًا ويسارًا كما تحب`;
+  setGoal(`<span>${L.m==='new'?'طريقة جديدة!':'وزّع الشبابيك'}</span><b style="font-size:1.4em;color:${TXT(n)}">${NUM(n)}</b>${lvTag(k)}${R.steps()}`); tip('اضغط على جهة من البيت لتضع شباكًا 🪟'); Speech.say(this.q);
+  if(L.m==='ghost') T.set(()=>{ if(!R.busy&&!this.a&&!this.b) this.hr.classList.add('glow'); },2200); },
+ draw(){ const g=this.L.m==='ghost'; this.hr.innerHTML=win().repeat(this.a)+(g?win(1).repeat(this.A-this.a):''); this.hl.innerHTML=win().repeat(this.b)+(g?win(1).repeat(this.B-this.b):'');
+  if(this.L.m==='target') setCounts(this,`${NUM(this.a)} من ${NUM(this.A)}`,`${NUM(this.b)} من ${NUM(this.B)}`); else setCounts(this,NUM(this.a),NUM(this.b));
+  this.tray.innerHTML='<i class="win off"></i>'.repeat(this.n-this.a-this.b); },
+ tap(x,y,t){ const half=t&&t.closest('.half'); if(!half||this.R.busy) return; $$('.half.glow').forEach(e=>e.classList.remove('glow')); const r=half.dataset.side==='r', w=t.closest('.win');
+  if(w&&!w.classList.contains('ghost')){ if(r) this.a--; else this.b--; Snd.play('whoosh'); this.draw(); return; }        // take a window back
+  if(this.a+this.b>=this.n) return;
+  const cap=this.A==null?null:(r?this.A:this.B), cur=r?this.a:this.b;
+  if(cap!=null&&cur>=cap){ // the corrector: this side is already full — show the other side
+   sideShake(half); const o=r?this.hl:this.hr; o.classList.add('glow'); Snd.play('no'); const m='هذه الجهة اكتملت 👍 ضع الشباك في الجهة الأخرى'; tip(m,true); Speech.say(m); return; }
+  if(r) this.a++; else this.b++; Snd.play('pop'); Speech.say(NNAME[this.a+this.b],1); this.draw();
+  if(this.a+this.b===this.n) T.set(()=>this.check(),500); },
+ check(){ const n=this.n,a=this.a,b=this.b,R=this.R; if(R.busy||a+b!==n) return; const k=a+'-'+b;
+  if(this.L.m==='new'&&this.used[n]===k){ R.miss('هذه نفس الطريقة السابقة 🙂 سأرجع الشبابيك، جرّب عددًا مختلفًا في كل جهة'); T.set(()=>{ this.a=0; this.b=0; this.draw(); },1600); return; }
+  this.used[n]=k; R.win(NNAME[n],TXT(n),3000,[String(n),NUM(n)]); T.set(()=>{ tip(eqText(n,a,b)); Speech.say(eqSay(n,a,b)); },1100); },
+ again(){ Speech.say(this.q); } };
+
+// ❓ missing windows — easy: dashed windows show the gap and only two choices; then three choices; then a «؟» and bigger houses
+const MISS=[[3,0],[4,0],[3,0],[4,1],[5,1],[6,1],[5,2],[7,2],[8,3],[9,3]];
+const Missing={ start(){ stage.className='sky'; this.R=run('miss',MISS.length,'كاشف الشبابيك! 🔍',R=>this.round(R)); this.R.go(); },
+ round(R){ const [n,lv]=MISS[R.i], k=this.k=1+((rnd()*(n-1))|0), ans=this.ans=n-k; this.n=n; this.lv=lv; this.fixing=false; stage.innerHTML=''; makeHouse(this,n,NUM(n));
+  this.hr.innerHTML=win().repeat(k); this.hl.innerHTML=lv<2?win(1).repeat(ans):'<b class="qm">؟</b>'; setCounts(this,NUM(k),'؟');
+  this.q=`البيت فيه ${NNAME[n]}. في اليمين ${NNAME[k]}. كم في اليسار؟`; setGoal(`<span>كم شباكًا في اليسار؟</span><b style="font-size:1.4em;color:${TXT(n)}">${NUM(n)}</b>${lvTag(lv)}${R.steps()}`); tip(lv===0?'عُدّ الشبابيك المنقّطة 👈':''); Speech.say(this.q);
+  const set=new Set([ans]); while(set.size<(lv===0?2:3)){ const m=ans+pick([-2,-1,1,2]); if(m>=0&&m<=9) set.add(m); } opts(shuffle([...set]).map(v=>({v,label:NUM(v),color:'#1e6fd9'})),(v,b)=>this.pick(v,b));
+  if(lv===0) T.set(()=>{ const b=optBtn(ans); if(b&&!R.busy) b.classList.add('hint'); },3500); },
+ pick(v,bt){ const R=this.R,n=this.n,k=this.k,ans=this.ans; if(R.busy||this.fixing) return;
+  if(v===ans){ closeOpts(); this.hl.innerHTML=Array.from({length:ans},()=>'<i class="win pop"></i>').join(''); setCounts(this,NUM(k),NUM(ans)); Snd.play('place'); R.win(NNAME[ans],'#1e6fd9',3000,[String(ans),NUM(ans)]); T.set(()=>{ tip(eqText(n,k,ans)); Speech.say(eqSay(n,k,ans)); },1100); return; }
+  // the corrector: show the missing windows and count them together, then light the right answer
+  shake(bt); R.miss('لنعدّ معًا الشبابيك الناقصة 👇'); this.fixing=true; this.hl.innerHTML=win(1).repeat(ans);
+  T.set(()=>countUp(this,[...this.hl.querySelectorAll('.win')],()=>{ this.fixing=false; const b=optBtn(ans); if(b) b.classList.add('hint'); tip(`في اليسار ${NUM(ans)} 👈 اضغط ${NUM(ans)}`,true); }),1200); },
+ again(){ Speech.say(this.q); } };
+
+// 🔢 the whole house — easy: the game counts with the child and two choices; tap a window to count it yourself; then bigger houses
+const WHOLE=[[4,0],[3,0],[4,0],[5,1],[6,1],[6,1],[7,2],[8,2],[9,3],[10,3]];
+const Whole={ start(){ stage.className='sky'; this.R=run('whole',WHOLE.length,'عدّاد البيوت! 🔢',R=>this.round(R)); this.R.go(); },
+ round(R){ const [top,lv]=WHOLE[R.i]; let a,b; do{ a=1+((rnd()*(top-1))|0); b=1+((rnd()*(top-1))|0); }while(a+b>top||a+b<top-(lv<2?1:3)); const n=this.n=a+b; this.p=[a,b]; this.lv=lv; this.c=0; this.fixing=false; stage.innerHTML='';
+  makeHouse(this,Math.max(a,b)*2,'؟'); this.hr.innerHTML=win().repeat(a); this.hl.innerHTML=win().repeat(b); setCounts(this,NUM(a),NUM(b));
+  this.q='كم شباكًا في البيت كله؟'; setGoal(`<span>${this.q}</span>${lvTag(lv)}${R.steps()}`); tip('اضغط على كل شباك لتعدّه 👆');
+  const ask=()=>{ Speech.say(lv===0?'كم شباكًا في البيت كله؟':`في اليمين ${NNAME[a]}، وفي اليسار ${NNAME[b]}. كم شباكًا في البيت كله؟`);
+   const set=new Set([n]); while(set.size<(lv===0?2:3)){ const m=n+pick([-2,-1,1,2]); if(m>=2&&m<=10) set.add(m); } opts(shuffle([...set]).map(v=>({v,label:NUM(v),color:'#e53935'})),(v,bt)=>this.pick(v,bt)); };
+  if(lv===0){ tip('لنعدّ معًا 👇'); this.fixing=true; T.set(()=>countUp(this,this.all(),()=>{ this.fixing=false; ask(); T.set(()=>{ const b=optBtn(n); if(b&&!R.busy) b.classList.add('hint'); },2500); }),900); } else ask(); },
+ all(){ return [...this.hr.querySelectorAll('.win'),...this.hl.querySelectorAll('.win')]; },
+ tap(x,y,t){ const w=t&&t.closest('.half .win'); if(!w||this.R.busy||this.fixing||w.querySelector('.num')) return; this.c++; w.innerHTML=`<b class="num">${NUM(this.c)}</b>`; Snd.play('pop'); Speech.say(NNAME[this.c],1.1); },
+ pick(v,bt){ const R=this.R,n=this.n,[a,b]=this.p; if(R.busy||this.fixing) return;
+  if(v===n){ closeOpts(); this.roof.textContent=NUM(n); this.roof.style.color=TXT(n); Snd.play('place'); R.win(NNAME[n],TXT(n),3000,[String(n),NUM(n)]); T.set(()=>{ tip(eqText(n,a,b)); Speech.say(eqSay(n,a,b)); },1100); return; }
+  // the corrector: count every window together, then light the right answer
+  shake(bt); R.miss('لنعدّ كل الشبابيك معًا 👇'); this.fixing=true; this.c=0; this.all().forEach(e=>e.innerHTML='');
+  T.set(()=>countUp(this,this.all(),()=>{ this.fixing=false; this.c=n; const b=optBtn(n); if(b) b.classList.add('hint'); tip(`آخر رقم هو ${NUM(n)} 👈 اضغط ${NUM(n)}`,true); }),1200); },
+ again(){ Speech.say(this.q); } };
+
+const ACTS=[
+ {id:'split',ic:'🏠',t:'وزّع الشبابيك',p:'بيت العدد ٤: شباكان يمينًا وشباكان يسارًا… أو ٣ و ١!',a:'#ef5350',b:'#ffb300',g:Split},
+ {id:'miss',ic:'🔍',t:'الشبابيك الناقصة',p:'البيت ٥ وفي اليمين ٣: كم في اليسار؟',a:'#1e6fd9',b:'#8e6bd8',g:Missing},
+ {id:'whole',ic:'🔢',t:'البيت كله',p:'٢ يمينًا و٣ يسارًا: كم في البيت كله؟',a:'#2e9d3a',b:'#e53935',g:Whole}];
+
+/* ---------- menu, input and boot ---------- */
+S=Object.assign(S,store.get('settings',{})); PR=Object.assign({},store.get('progress',{}));
+document.title=META.title; $('#mTitle').textContent=META.title; $('#mEyebrow').textContent=META.eyebrow; $('#mLead').textContent=META.lead;
+$('#acts').innerHTML=ACTS.map(a=>`<button class="act" data-go="${a.id}" style="--a:${a.a};--b:${a.b}"><span class="ic">${a.ic}</span><h3>${a.t}</h3><p>${a.p}</p><span class="pr" id="pr-${a.id}"></span></button>`).join('');
+
+let drag=false, gpActive=false, gp={x:innerWidth/2,y:innerHeight/2}, prevA=false, prevO=false, padIdx=null, navCd=0, padOn=false;
+stage.addEventListener('pointerdown',e=>{ Snd.init(); const d=e.target.closest('.drag'); if(d){ e.preventDefault(); drag=true; try{ stage.setPointerCapture(e.pointerId); }catch(_){} DM.start(d,e.clientX,e.clientY); return; } if(A&&A.tap) A.tap(e.clientX,e.clientY,e.target); });
+stage.addEventListener('pointermove',e=>{ if(drag) DM.move(e.clientX,e.clientY); });
+const pup=e=>{ if(!drag) return; drag=false; DM.end(e.clientX,e.clientY); }; stage.addEventListener('pointerup',pup); stage.addEventListener('pointercancel',pup);
+addEventListener('pointermove',e=>{ if(e.pointerType==='mouse'&&(e.movementX||e.movementY)&&gpActive){ gpActive=false; $('#cursor').hidden=true; } },{passive:true});
+function getPad(){ let ps=[]; try{ ps=navigator.getGamepads?navigator.getGamepads():[]; }catch(e){} if(padIdx!=null&&ps[padIdx]) return ps[padIdx]; for(const p of ps) if(p&&p.connected){ padIdx=p.index; return p; } return null; }
+function rumble(ms,s,w){ if(S.calm){s*=.4;w*=.4;} try{ const g=getPad(); if(g&&g.vibrationActuator) g.vibrationActuator.playEffect('dual-rumble',{duration:ms,strongMagnitude:s,weakMagnitude:w}).catch(()=>{}); }catch(e){} }
+// the gamepad loop only runs once a controller is connected (no work for touch-only devices)
+addEventListener('gamepadconnected',e=>{ padIdx=e.gamepad.index; toast('🎮 يد التحكم: حرّك العصا، واضغط ✕ للاختيار أو مع التحريك للسحب'); if(!padOn){ padOn=true; requestAnimationFrame(padLoop); } });
+function padLoop(){ requestAnimationFrame(padLoop); const g=getPad(); if(!g) return; const bt=i=>!!(g.buttons[i]&&g.buttons[i].pressed); let ax=g.axes[0]||0, ay=g.axes[1]||0; if(bt(14)) ax=-1; if(bt(15)) ax=1; if(bt(12)) ay=-1; if(bt(13)) ay=1; if(Math.abs(ax)<.15) ax=0; if(Math.abs(ay)<.15) ay=0;
+ const a=bt(0), o=bt(1); if(a||o||ax||ay) Snd.init();
+ const panel=!$('#sayit').hidden;
+ if(mode&&!panel){ if(ax||ay){ gpActive=true; gp.x=clamp(gp.x+ax*13,10,innerWidth-10); gp.y=clamp(gp.y+ay*13,10,innerHeight-10); if(drag) DM.move(gp.x,gp.y); }
+  const c=$('#cursor'); c.hidden=!gpActive; c.style.left=gp.x+'px'; c.style.top=gp.y+'px';
+  if(a&&!prevA&&gpActive){ const t=document.elementFromPoint(gp.x,gp.y); const d=t&&t.closest('.drag'); if(d){ drag=true; DM.start(d,gp.x,gp.y); } else { const b=t&&t.closest('button'); if(b) b.click(); else if(A&&A.tap) A.tap(gp.x,gp.y,t); } }
+  if(!a&&prevA&&drag){ drag=false; DM.end(gp.x,gp.y); } if(o&&!prevO) showMenu(); }
+ else { navCd-=1/60; const vis=[...document.querySelectorAll('#sayit:not([hidden]) button,#menu:not([hidden]) button,#menu:not([hidden]) a.btn,#end:not([hidden]) button')]; if((ax||ay)&&navCd<=0&&vis.length){ navCd=.25; const cur=document.activeElement; let i=vis.indexOf(cur); i=i<0?0:clamp(i+((ax<0||ay>0)?1:-1),0,vis.length-1); vis[i].focus(); } if(!ax&&!ay) navCd=0; if(a&&!prevA&&document.activeElement&&vis.includes(document.activeElement)) document.activeElement.click(); }
+ prevA=a; prevO=o; }
+
+document.addEventListener('click',e=>{ Snd.init();
+ const ml=e.target.closest('#mainLink'); if(ml&&window.parent!==window){ e.preventDefault(); try{speechSynthesis.cancel();}catch(_){} window.parent.postMessage('ayn-close','*'); return; }
+ const go=e.target.closest('[data-go]'); if(go){ const g=go.dataset.go; if(g==='menu') showMenu(); else startAct(g); return; }
+ const sg=e.target.closest('.seg button'); if(sg){ const k=sg.parentElement.dataset.key; S[k]=sg.dataset.v==='true'; store.set('settings',S); refreshMenu(); return; } });
+$('#bHome').onclick=()=>showMenu();
+$('#bSay').onclick=()=>{ if(A&&A.again) A.again(); };
+addEventListener('keydown',e=>{ if(e.code==='Escape'&&mode) showMenu(); });
+let rz=null; addEventListener('resize',()=>{ clearTimeout(rz); rz=setTimeout(()=>{ if(A&&A.layout) A.layout(); },150); });
+Speech.init(); showMenu();
+})();
+</script>
+
+<script>(function(){ var p=document.querySelector('#menu > .panel'); if(!p) return; var c=document.createElement('p'); c.dir='rtl'; c.style.cssText='margin:6px 0 0;text-align:center;font-size:12px;line-height:1.6;opacity:.75'; c.textContent='© ٢٠٢٦ أحمد حازم عبد الله — جميع الحقوق محفوظة. لا يجوز نسخ أو استخدام أو إعادة نشر أي جزء من هذه الألعاب أو محتواها دون إذن مسبق من صاحبها.'; p.appendChild(c); })();</script>
+</body>
+</html>
