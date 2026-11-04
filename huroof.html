@@ -309,32 +309,35 @@ kbd{display:inline-block;font-family:var(--body);font-weight:700;padding:1px 8px
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 /* Performance guard for every 3D game (injected by build.ps1 right after three.js):
-   - weak devices (tablets, phones, low-end PCs) start with a lighter picture
-   - if the game still runs slowly, the picture gets lighter step by step (lower resolution, then no shadows)
+   - every device starts with the full picture the game asks for (phones are only capped at 2× pixels)
+   - only if the game stays really slow (under 20 fps for 10 s) does the picture get lighter, one small step at a time,
+     and it climbs back up by itself when the game runs smoothly again
    - if the graphics card gives up (white screen), the game reloads itself; progress is kept in localStorage */
 (function(){
  if(!window.THREE||THREE.__guarded) return; THREE.__guarded=true;
- const weak=(navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4||/Android|iPad|iPhone|Mobile|CrOS|Silk/i.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
- let tier=weak?1:0, R=null, SC=null;
- const cap=()=>tier===0?Infinity:tier===1?1:tier===2?.75:.6;
+ const phone=/Android|iPhone|Mobile/i.test(navigator.userAgent);
+ let tier=0, R=null, SC=null, want=1, shadowsWanted=null;
+ const cap=()=>[phone?2:Infinity,1.5,1.15,1][tier];
  const R0=THREE.WebGLRenderer;
- function lighter(){ if(!R||tier>=3) return; tier++;
-  R.setPixelRatio(R.getPixelRatio()); R.setSize(innerWidth,innerHeight,false);
-  if(tier>=2&&R.shadowMap.enabled){ R.shadowMap.enabled=false; if(SC) SC.traverse(o=>{ const ms=Array.isArray(o.material)?o.material:o.material?[o.material]:[]; ms.forEach(m=>m.needsUpdate=true); }); }
-  if(tier>=3){ R.setPixelRatio(.6); R.setSize(innerWidth,innerHeight,false); } }
+ function refreshMats(){ if(SC) SC.traverse(o=>{ const ms=Array.isArray(o.material)?o.material:o.material?[o.material]:[]; ms.forEach(m=>m.needsUpdate=true); }); }
+ function apply(){ if(!R) return; R.__setPR(Math.min(want,cap())); R.setSize(innerWidth,innerHeight,false);
+  const sh=tier<3&&shadowsWanted; if(shadowsWanted!=null&&R.shadowMap.enabled!==sh){ R.shadowMap.enabled=sh; refreshMats(); } }
  function lost(){ if(document.getElementById('__lost')) return; const d=document.createElement('div'); d.id='__lost'; d.dir='rtl';
   d.style.cssText='position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:#0a1030;color:#ffc83a;font:800 26px Tahoma,sans-serif;text-align:center;padding:20px';
-  d.textContent='جارٍ إعادة تشغيل اللعبة… 🔄'; document.body.appendChild(d); try{ sessionStorage.setItem('__guardTier',String(Math.max(2,tier))); }catch(e){} setTimeout(()=>location.reload(),1200); }
- // a reload after a crash comes back lighter
+  d.textContent='جارٍ إعادة تشغيل اللعبة… 🔄'; document.body.appendChild(d); try{ sessionStorage.setItem('__guardTier',String(Math.min(3,tier+1))); }catch(e){} setTimeout(()=>location.reload(),1200); }
+ // a reload after a crash comes back one step lighter
  try{ const t=+sessionStorage.getItem('__guardTier'); if(t>tier) tier=t; }catch(e){}
- function Guarded(o){ const r=new R0(o); R=r; const render=r.render.bind(r); r.render=function(s,c){ SC=s; return render(s,c); };
-  // the games pick their own quality; the guard only ever lowers it (three r128 defines these per instance)
-  const setPR=r.setPixelRatio.bind(r); r.setPixelRatio=v=>setPR(Math.min(v,cap())); r.setPixelRatio(devicePixelRatio||1);
+ function Guarded(o){ const r=new R0(o); R=r; const render=r.render.bind(r); r.render=function(s,c){ SC=s; if(shadowsWanted==null) shadowsWanted=r.shadowMap.enabled; return render(s,c); };
+  // the games pick their own quality; the guard only lowers it while the device is struggling (three r128 defines these per instance)
+  r.__setPR=r.setPixelRatio.bind(r); r.setPixelRatio=v=>{ want=v; r.__setPR(Math.min(v,cap())); }; r.setPixelRatio(devicePixelRatio||1);
   r.domElement.addEventListener('webglcontextlost',e=>{ e.preventDefault(); lost(); },false);
-  if(tier>=2) setTimeout(()=>{ if(r.shadowMap.enabled){ r.shadowMap.enabled=false; } },0);
-  let last=performance.now(), acc=0, n=0;
-  (function watch(t){ requestAnimationFrame(watch); const dt=t-last; last=t; if(document.hidden||dt>400||dt<=0) return; acc+=dt; n++;
-   if(acc>4000){ const fps=1000*n/acc; acc=0; n=0; if(fps<30) lighter(); } })(last);
+  if(tier>=3) setTimeout(apply,0);
+  const t0=performance.now(); let last=t0, acc=0, n=0, slow=0, fast=0;
+  (function watch(t){ requestAnimationFrame(watch); const dt=t-last; last=t; if(document.hidden||dt>400||dt<=0||t-t0<8000) return; acc+=dt; n++;
+   if(acc>5000){ const fps=1000*n/acc; acc=0; n=0;
+    if(fps<20){ fast=0; if(++slow>=2&&tier<3){ tier++; slow=0; apply(); } }
+    else if(fps>50){ slow=0; if(++fast>=3&&tier>0){ tier--; fast=0; apply(); } }
+    else { slow=0; fast=0; } } })(last);
   return r; }
  Guarded.prototype=R0.prototype; THREE.WebGLRenderer=Guarded;
 })();
@@ -405,7 +408,7 @@ const THEMES={
  swamp:{kind:'ground',sky:['#7da39a','#d7e6cf'],fog:'#a9bfa4',fn:30,ff:200,hemi:['#e0f0d0','#3a4a2a',.85],sun:['#f2f0d0',.85],ground:['#4a6a2e','#6f8a3a'],hills:2,mount:'#5a705a',props:[['puddle',16],['reed',80],['mushroom',30],['tree',40],['bush',50]],part:'fireflies'},
  highway:{kind:'ground',sky:['#4aa0f0','#e8f4ff'],fog:'#e4f0fa',fn:90,ff:380,hemi:['#f0f8ff','#5a7a3a',.85],sun:['#fff6e0',1.05],ground:['#5f9a3e','#8cbf56'],hills:0,mount:'#7a98aa',props:[['tree',120],['house',10],['bush',40],['rock',20]],ring:90},
  city:{kind:'ground',city:1,sky:['#3f8fe0','#dbeeff'],fog:'#d4e6f7',fn:60,ff:300,hemi:['#eef6ff','#4a4f5a',.85],sun:['#fff4e0',1.05],ground:['#555','#555'],hills:0,R:170},
- river:{kind:'sea',surface:15,fog:'#2f7f72',fn:4,ff:75,floor:['#5d5a32','#86804a'],floorAmp:2,hemi:['#bfffe8','#2a3a22',1.0],sun:['#e0fff0',.7],props:[['weed',90],['srock',40],['reedtall',60],['lily',40]],part:'bubbles',R:100,water:'#9fe0c8'},
+ river:{kind:'sea',surface:15,fog:'#3a9a8a',fn:14,ff:105,floor:['#7a6c42','#a8945e'],floorAmp:2.5,hemi:['#c8f4e4','#2e4a30',.95],sun:['#f4fff0',.85],moss:'#5f9a3a',cau:.55,props:[['weed',110],['srock',36],['reedtall',50],['lily',40],['rays',14],['school',4]],part:'bubbles',R:100,water:'#bff0dc'},
  ocean:{kind:'sea',surface:40,fog:'#1679b8',fn:8,ff:125,floor:['#cdb57f','#efd9a6'],floorAmp:4,hemi:['#bfe8ff','#1a3a5a',1.0],sun:['#e8f6ff',.85],props:[['coral',70],['weed',70],['srock',30],['shell',40],['school',6],['rays',14]],part:'bubbles',R:120,water:'#7fd0ff'},
  reef:{kind:'sea',surface:36,fog:'#0f8fb0',fn:8,ff:125,floor:['#e0c890','#f6e6b8'],floorAmp:3,hemi:['#c8f4ff','#1a4a5a',1.05],sun:['#f0fbff',.9],props:[['coral',140],['weed',40],['srock',25],['shell',40],['school',8],['rays',12]],part:'bubbles',R:120,water:'#8fe6ff'},
  deep:{kind:'sea',surface:60,fog:'#03203f',fn:4,ff:85,floor:['#2a3a4a','#3a4c5e'],floorAmp:5,hemi:['#6ab0ff','#0a1020',.6],sun:['#88bbff',.35],props:[['jelly',30],['weed',50],['srock',40],['glowcoral',50]],part:'bubbles',R:120,water:'#2a5a8a',spot:1},
@@ -492,6 +495,27 @@ const SUNOFF=new THREE.Vector3(45,95,35);
 const skyMat=new THREE.ShaderMaterial({uniforms:{top:{value:new THREE.Color()},bot:{value:new THREE.Color()}},vertexShader:'varying float h;void main(){h=normalize(position).y;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'uniform vec3 top;uniform vec3 bot;varying float h;void main(){gl_FragColor=vec4(mix(bot,top,pow(clamp(h,0.,1.),.55)),1.);}',side:THREE.BackSide,depthWrite:false,fog:false});
 const skyMesh=new THREE.Mesh(new THREE.SphereGeometry(1500,32,16),skyMat); skyMesh.renderOrder=-1; scene.add(skyMesh);
 const DOT=dotTex();
+/* ---- underwater look: moving sunlight patterns (caustics) on the floor and rocks, sand texture, smooth mossy rocks ---- */
+const CAU={value:0};
+function addCaustics(m,scale,str){ m.onBeforeCompile=sh=>{ sh.uniforms.uT=CAU;
+  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;').replace('#include <worldpos_vertex>','#include <worldpos_vertex>\nvWP=(modelMatrix*vec4(transformed,1.0)).xyz;');
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>
+varying vec3 vWP; uniform float uT;
+float cau(vec2 p,float t){ vec2 i=p; float c=1.0; const float inten=.005; for(int n=0;n<4;n++){ float tt=t*(1.0-(3.5/float(n+1))); i=p+vec2(cos(tt-i.x)+sin(tt+i.y),sin(tt-i.y)+cos(tt+i.x)); c+=1.0/length(vec2(p.x/(sin(i.x+tt)/inten),p.y/(cos(i.y+tt)/inten))); } c/=4.0; c=1.17-pow(c,1.4); return pow(abs(c),8.0); }`)
+   .replace('#include <fog_fragment>',`float up=clamp(normal.y*.5+.5,0.,1.); gl_FragColor.rgb+=vec3(.9,1.,.95)*min(cau(mod(vWP.xz*${scale.toFixed(3)},6.2831)-250.0,uT*.55),1.2)*${str.toFixed(2)}*up;\n#include <fog_fragment>`); }; m.customProgramCacheKey=()=>'cau'+scale+str; return m; }
+let SAND=null;
+function sandTex(){ if(SAND) return SAND; const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d'); x.fillStyle='#e8e8e8'; x.fillRect(0,0,256,256);
+ for(let y=0;y<256;y++){ const v=Math.sin(y*.15+Math.sin(y*.04)*3)*.5+.5; x.fillStyle=`rgba(255,255,255,${(v*.18).toFixed(3)})`; x.fillRect(0,y,256,1); }
+ for(let i=0;i<5000;i++){ const g=150+Math.random()*105|0; x.fillStyle=`rgba(${g},${g},${g-10},.55)`; x.fillRect(Math.random()*256,Math.random()*256,1+Math.random()*2,1+Math.random()*2); }
+ for(let i=0;i<60;i++){ x.fillStyle=`rgba(90,80,60,${(.15+Math.random()*.2).toFixed(2)})`; x.beginPath(); x.arc(Math.random()*256,Math.random()*256,1.5+Math.random()*3,0,6.3); x.fill(); }
+ SAND=new THREE.CanvasTexture(c); SAND.wrapS=SAND.wrapT=THREE.RepeatWrapping; SAND.repeat.set(45,45); SAND.anisotropy=8; return SAND; }
+// a smooth rock: a round shape pushed in and out the same way at every shared point (no cracks), green moss on top
+function rockGeo(r,moss,base){ const g=new THREE.IcosahedronGeometry(r,2), p=g.attributes.position, v=new THREE.Vector3(), col=[], cb=new THREE.Color(base), cm=new THREE.Color(moss), t=new THREE.Color(), sd=rng()*100;
+ for(let i=0;i<p.count;i++){ v.fromBufferAttribute(p,i).normalize(); const n=Math.sin(v.x*3.1+sd)*Math.cos(v.y*2.7+sd)*.5+Math.sin(v.z*5.3+v.x*2.2+sd)*.25; v.multiplyScalar(r*(1+n*.28)); v.y*=.62; p.setXYZ(i,v.x,v.y,v.z); t.copy(cb).lerp(cm,clamp((v.y/(r*.62))*1.6-.2,0,1)*.85); const d=.88+hash2(Math.round(v.x*7),Math.round(v.z*7))*.18; col.push(t.r*d,t.g*d,t.b*d); }
+ g.setAttribute('color',new THREE.Float32BufferAttribute(col,3)); g.computeVertexNormals(); return g; }
+const ROCKMAT={}; function rockMat(k){ return ROCKMAT[k]||(ROCKMAT[k]=addCaustics(new THREE.MeshStandardMaterial({vertexColors:true,roughness:.92}),.22,.55)); }
+// a water plant: a bending stem with pointed leaves on both sides (double-sided, soft colours)
+let LEAF=null; function leafGeo(){ if(LEAF) return LEAF; const s=new THREE.Shape(); s.moveTo(0,0); s.bezierCurveTo(.32,.25,.3,.9,0,1.25); s.bezierCurveTo(-.3,.9,-.32,.25,0,0); LEAF=new THREE.ShapeGeometry(s,8); return LEAF; }
 function applyQuality(){ const q=S.quality; renderer.setPixelRatio(q==='ultra'?Math.min(devicePixelRatio,3):q==='high'?Math.min(devicePixelRatio,2):1); const ms=q==='medium'?1024:q==='high'?2048:4096; if(sun.shadow.mapSize.x!==ms){ sun.shadow.mapSize.set(ms,ms); if(sun.shadow.map){sun.shadow.map.dispose(); sun.shadow.map=null;} } resize(); }
 function resize(){ const w=innerWidth,h=innerHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
 addEventListener('resize',resize);
@@ -726,7 +750,9 @@ function terrain(th,size,seg,Hf,cols){ const geo=new THREE.PlaneGeometry(size,si
  const pc=th.patch?th.patch.map(c=>new THREE.Color(c)):null;
  for(let i=0;i<pos.count;i++){ const x=pos.getX(i), z=pos.getZ(i), y=Hf(x,z); pos.setY(i,y); const n=hash2(Math.floor(x/3),Math.floor(z/3)); if(pc&&Math.hypot(x,z)>20){ tc.copy(pc[(hash2(Math.floor(x/38),Math.floor(z/38))*pc.length)|0]); tc.lerp(c1,n*.15);} else { tc.copy(c1).lerp(c2,clamp(.5+y/(amp*2.2)+(n-.5)*.35,0,1)); } arr.push(tc.r,tc.g,tc.b); }
  geo.setAttribute('color',new THREE.Float32BufferAttribute(arr,3)); geo.computeVertexNormals();
- const m=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({vertexColors:true,roughness:1,flatShading:!!th.flatT})); m.receiveShadow=true; W.root.add(m); return m; }
+ const sea=th.kind==='sea', fm=new THREE.MeshStandardMaterial({vertexColors:true,roughness:1,flatShading:!!th.flatT,map:sea?sandTex():null});
+ if(sea) addCaustics(fm,.16,th.cau||.75);
+ const m=new THREE.Mesh(geo,fm); m.receiveShadow=true; W.root.add(m); return m; }
 
 const PROPS={
  tree(x,z,s){ const g=grp(x,W.H(x,z),z,s); mk(G.cyl(.25,.4,2.6,7),mat('#7a4f2c',{flat:1}),0,1.3,0,g); const cs=['#3f8f3a','#4ea53f','#2f7a35','#5cb247']; const n=2+(rng()*2|0); for(let i=0;i<n;i++){ const m=mk(G.ico(1.5+rng()*.6),mat(pick(cs),{flat:1}),(rng()-.5)*1.2,3.3+i*.9,(rng()-.5)*1.2,g); m.rotation.set(rng()*3,rng()*3,0);} ob(x,z,.7*s); },
@@ -756,8 +782,13 @@ const PROPS={
  // sea
  coral(x,z,s,glow){ const g=grp(x,W.H(x,z),z,s*rand(.7,1.5)); const col=pick(['#ff6f91','#ffb347','#a77bff','#ff5e5e','#4fd1c5','#ffd166','#ff8ad8']); const m=glow?mat(col,{e:col,ei:.6}):mat(col,{flat:1}); const t=rng(); if(t<.4){ for(let i=0;i<6;i++){ const b=mk(G.cyl(.15,.22,rand(1.5,3),6),m,(rng()-.5),1,(rng()-.5),g); b.rotation.set((rng()-.5)*1,0,(rng()-.5)*1); mk(G.sph(.22,6,4),m,b.position.x+Math.sin(-b.rotation.z)*1.2,2.2,b.position.z,g); } } else if(t<.7){ const b=mk(G.ico(1.4,1),m,0,.6,0,g); b.scale.y=.7; } else { for(let i=0;i<5;i++){ const h=rand(1,3); mk(G.cyl(.35,.3,h,10,true),m,(rng()-.5)*1.6,h/2,(rng()-.5)*1.6,g); } } },
  glowcoral(x,z,s){ PROPS.coral(x,z,s,1); },
- weed(x,z,s){ const g=grp(x,W.H(x,z),z,1); const c=mat(pick(['#3b9a4a','#2f8a5a','#5aaa3a'])); let par=g; const segs=[]; const n=5+(rng()*5|0); for(let i=0;i<n;i++){ const sg=new THREE.Group(); sg.position.y=i?1.4:0; par.add(sg); const m=mk(G.box(.35,1.5,.06),c,0,.7,0,sg,1); segs.push(sg); par=sg; } const ph=rng()*6; W.anim.push(t=>segs.forEach((sg,i)=>{ sg.rotation.z=Math.sin(t*1.2+ph+i*.5)*.12; sg.rotation.x=Math.cos(t*.9+ph+i*.4)*.08; })); },
- srock(x,z,s){ const g=grp(x,W.H(x,z),z,s*rand(.8,2.2)); const m=mk(G.dod(1.4),mat(pick(['#5a6a7a','#6a7a6a','#4a5a6a']),{flat:1}),0,.5,0,g); m.scale.set(1.3,.8,1.1); },
+ weed(x,z,s){ const g=grp(x,W.H(x,z),z,1); const hue=pick([['#2f8a4a','#7fd07a'],['#3a9a3a','#a6e07a'],['#2a7a5a','#6fd0a0'],['#5a8a2a','#c8e070']]); const SM=mat(hue[0],{r:.6}), LM=mat(hue[1],{r:.55,ds:1}), LM2=mat(hue[0],{r:.6,ds:1});
+  const stems=1+(rng()*3|0), all=[]; for(let k=0;k<stems;k++){ let par=new THREE.Group(); par.position.set((rng()-.5)*.8,0,(rng()-.5)*.8); par.rotation.y=rng()*6.28; g.add(par); const segs=[]; const n=4+(rng()*5|0);
+   for(let i=0;i<n;i++){ const sg=new THREE.Group(); sg.position.y=i?1.2:0; par.add(sg); mk(G.cyl(.05,.07,1.25,6),SM,0,.62,0,sg,1); const sc=1-i/(n+2)*.5;
+    for(const sd of [-1,1]){ const l=new THREE.Mesh(leafGeo(),(i+sd)%2?LM:LM2); l.position.set(0,.9,0); l.rotation.set(.15,sd>0?0:Math.PI,sd*-.85); l.scale.setScalar(1.25*sc); sg.add(l); } segs.push(sg); par=sg; }
+   all.push(segs); } const ph=rng()*6; W.anim.push(t=>all.forEach((segs,k)=>segs.forEach((sg,i)=>{ sg.rotation.z=Math.sin(t*1.1+ph+k+i*.5)*.13; sg.rotation.x=Math.cos(t*.8+ph+k+i*.4)*.09; }))); },
+ srock(x,z,s){ const sz=s*rand(.8,2.2), g=grp(x,W.H(x,z)-.3*sz,z,sz); const k=pick(['a','b','c']), base={a:'#6a7480',b:'#7a7466',c:'#5e6a70'}[k]; const m=new THREE.Mesh(rockGeo(1.5,W.th.moss||'#4f7a3a',base),rockMat(k)); m.castShadow=m.receiveShadow=true; g.add(m);
+  if(rng()<.5){ const m2=new THREE.Mesh(rockGeo(.8,W.th.moss||'#4f7a3a',base),rockMat(k)); m2.position.set(1.4,-.1,.6); m2.receiveShadow=true; g.add(m2); } ob(x,z,1.6*sz); },
  shell(x,z){ const g=grp(x,W.H(x,z)+.1,z,1); const c=mat(pick(['#ff8a3a','#ff5e8a','#ffd23f']),{flat:1}); for(let i=0;i<5;i++){ const p=new THREE.Group(); p.rotation.y=i*1.2566; g.add(p); const a=mk(G.cone(.18,.7,4),c,0,.08,.35,p,1); a.rotation.x=Math.PI/2; } },
  school(){ const cx=rand(-80,80),cz=rand(-80,80),cy=rand(6,W.yMax-6); const g=grp(cx,cy,cz,1,0); const c=mat(pick(['#5ec8ff','#ffd23f','#ff8ad8','#7fffd0'])); for(let i=0;i<14;i++){ const f=new THREE.Group(); const a=i/14*6.28; f.position.set(Math.cos(a)*(7+rng()*3),(rng()-.5)*3,Math.sin(a)*(7+rng()*3)); f.rotation.y=-a; g.add(f); const b=mk(G.sph(.35,8,6),c,0,0,0,f,1); b.scale.set(.6,.8,1.4); const tl=mk(G.cone(.25,.4,4),c,0,0,-.55,f,1); tl.rotation.x=-Math.PI/2; } const sp=rand(.25,.5); W.anim.push((t,dt)=>{ g.rotation.y+=dt*sp; }); },
  rays(){ const x=rand(-90,90),z=rand(-90,90), h=W.yMax+4; const m=new THREE.Mesh(new THREE.CylinderGeometry(2,7,h,16,1,true),new THREE.MeshBasicMaterial({color:'#dff6ff',transparent:true,opacity:.07,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false})); m.position.set(x,h/2,z); m.rotation.z=.25; W.root.add(m); const ph=rng()*6; W.anim.push(t=>{ m.material.opacity=.05+.035*Math.sin(t*.7+ph); }); },
@@ -822,10 +853,10 @@ function buildWorld(lv){
   }
  } else if(T==='sea'){
   W.yMax=th.surface-2.5; W.yMin=1.8; const amp=th.floorAmp; W.H=(x,z)=>amp*(Math.sin(x*.05)*Math.cos(z*.045)+.4*Math.sin(x*.12+z*.09));
-  terrain(th,420,140,W.H,th.floor);
+  terrain(th,420,140,W.H,th.floor); W.anim.push(t=>{ CAU.value=t; });
   const sf=new THREE.Mesh(new THREE.PlaneGeometry(600,600),new THREE.MeshBasicMaterial({color:th.water,transparent:true,opacity:.55,side:THREE.DoubleSide})); sf.rotation.x=-Math.PI/2; sf.position.y=th.surface; W.root.add(sf);
   (th.props||[]).forEach(([t,n])=>{ if(t==='school'||t==='rays'){ for(let i=0;i<n;i++) PROPS[t](); } else scatter(t,n); });
-  for(let i=0;i<30;i++){ const a=i/30*6.28; const m=mk(G.dod(rand(10,20)),mat(th.floor[0],{flat:1}),Math.cos(a)*(W.R+20),2,Math.sin(a)*(W.R+20),W.root,1); m.scale.y=rand(1,2.5); }
+  for(let i=0;i<30;i++){ const a=i/30*6.28, r=rand(10,20); const m=new THREE.Mesh(rockGeo(r,th.moss||'#4f7a3a',th.floor[0]),rockMat('w')); m.position.set(Math.cos(a)*(W.R+20),2,Math.sin(a)*(W.R+20)); m.scale.y=rand(1.6,3.6); W.root.add(m); }
  } else if(T==='surface'){
   W.H=()=>0; W.yMax=0;
   const geo=new THREE.PlaneGeometry(420,420,70,70); geo.rotateX(-Math.PI/2); const wm=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:'#1fa6c8',roughness:.15,metalness:.1,transparent:true,opacity:.88,flatShading:true})); wm.receiveShadow=true; W.root.add(wm); W.water=wm;

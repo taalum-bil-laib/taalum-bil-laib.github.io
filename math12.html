@@ -275,7 +275,14 @@ const sayNum=n=>Speech.say(NNAME[n],.8);
 const META={prefix:'math12_',title:'المقارنة',eyebrow:'الرياضيات · المقارنة بين الأعداد (١–٢٠)',lead:'التمساح الجائع يفتح فمه دائمًا نحو العدد الأكبر، والميزان ينزل بالعدد الأكبر ويتوازن مع المتساويين، وسباق الأبراج: أيها فيه مكعبات أكثر؟'};
 css(`.ncard{position:absolute;display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 18px;border-radius:26px;background:#fff;box-shadow:0 10px 0 rgba(0,0,0,.18);cursor:pointer}
 .ncard .nn{font-family:var(--display);font-size:clamp(84px,13vw,140px);line-height:1}.ncard.no{animation:shake .4s}.ncard.hint{animation:hint 1s infinite}
-.croc{position:absolute;font-size:clamp(120px,18vw,190px);line-height:1;transition:transform .5s cubic-bezier(.3,1.5,.5,1)}.croc.eat{animation:chomp .45s 3}@keyframes chomp{50%{scale:1.15 .85}}
+.croc{position:absolute;width:min(30vw,360px);transition:transform .5s cubic-bezier(.3,1.5,.5,1);filter:drop-shadow(0 10px 8px rgba(0,0,0,.28))}.croc svg{display:block;width:100%;height:auto;overflow:visible}
+.croc .uj,.croc .lj{transform-box:view-box;transform-origin:62px 108px;transition:transform .35s cubic-bezier(.3,1.6,.5,1)}.croc .uj{transform:rotate(-26deg)}.croc .lj{transform:rotate(13deg)}
+.croc.shut .uj,.croc.shut .lj{transform:none}.croc.eat .uj{animation:cu .34s 3}.croc.eat .lj{animation:cl .34s 3}@keyframes cu{50%{transform:rotate(-1deg)}}@keyframes cl{50%{transform:rotate(1deg)}}
+.croc .lid{transform-box:view-box;transform-origin:116px 18px;transform:scaleY(0);animation:blink 4.2s infinite}@keyframes blink{0%,93%,100%{transform:scaleY(0)}96%{transform:scaleY(1)}}
+.croc .brth{animation:brth 2.4s ease-in-out infinite;transform-box:view-box;transform-origin:40px 150px}@keyframes brth{50%{transform:scale(1.02,.985)}}
+.pond{background:linear-gradient(180deg,#6cc8ff 0%,#c4ecff 50%,#7fd6e6 50%,#2a8fb8 100%)}.scn{position:absolute;inset:0;pointer-events:none;overflow:hidden}.scn .sun{position:absolute;right:8%;top:9%;width:90px;height:90px;border-radius:50%;background:radial-gradient(#fff6c0,#ffd54f 60%,rgba(255,213,79,0) 72%)}
+.scn .hill{position:absolute;bottom:50%;border-radius:50% 50% 0 0;background:linear-gradient(#8fd16a,#5aa845)}.scn .waves{position:absolute;left:0;width:100%;height:24px}.scn .lily{position:absolute;width:110px;height:38px;border-radius:50%;background:radial-gradient(circle at 40% 40%,#8ee06a,#3f9a3a);clip-path:polygon(0 0,100% 0,100% 100%,0 100%,50% 50%)}
+.scn .lily i{position:absolute;left:40%;top:-14px;font-style:normal;font-size:30px}.scn .reed{display:block;width:clamp(40px,5vw,64px);height:auto}
 .ss{position:absolute;left:50%;top:60%;width:min(82vw,720px);transform:translateX(-50%)}
 .beam{position:relative;height:24px;border-radius:12px;background:linear-gradient(#bcaaa4,#6d4c41);box-shadow:0 6px 0 rgba(0,0,0,.2);transition:transform 1.1s cubic-bezier(.3,1.5,.5,1)}
 .seat{position:absolute;bottom:22px;width:34%;display:flex;justify-content:center}.seat.l{left:0}.seat.r{right:0}
@@ -288,15 +295,40 @@ const WD={big:'أكبر',small:'أصغر'}, CL={big:'#e53935',small:'#1e6fd9'};
 function pair(i,eq){ const hi=i>=6, lo=hi?11:1, top=hi?20:10; const a=lo+((rnd()*(top-lo+1))|0); if(eq) return [a,a]; let b; do{ b=lo+((rnd()*(top-lo+1))|0); }while(b===a); return [a,b]; }
 const card=(n,show)=>`<span class="nn" style="color:${TXT(n>10?n-10:n)}">${NUM(n)}</span>${show?teen(n,Math.min(18,innerWidth/50)):''}`;
 
+// the crocodile drawing (mouth to the right): mouth insides behind, then the lower jaw, then the head with the eye
+const tth=(x0,x1,y,dir)=>{ let s=''; for(let x=x0;x<=x1;x+=17) s+=`<path d="M${x},${y} L${x+9},${y} L${x+4.5},${y+dir*12} Z" fill="#fffef5" stroke="#d8d2b8" stroke-width="1"/>`; return s; };
+const CROC_SVG=`<svg viewBox="-6 -10 312 200" aria-hidden="true"><defs>
+<linearGradient id="cgU" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8be064"/><stop offset=".55" stop-color="#43a83f"/><stop offset="1" stop-color="#2b7d33"/></linearGradient>
+<linearGradient id="cgL" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4caf50"/><stop offset=".45" stop-color="#3a9440"/><stop offset=".5" stop-color="#e9f0b0"/><stop offset="1" stop-color="#c8d67e"/></linearGradient>
+<radialGradient id="cgE" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#fff59d"/><stop offset=".7" stop-color="#fbc02d"/><stop offset="1" stop-color="#e09a00"/></radialGradient></defs>
+<g class="brth">
+<path d="M76,62 Q30,54 6,86 Q-10,126 16,156 Q46,174 80,158 Z" fill="url(#cgU)" stroke="#1f5e2a" stroke-width="3"/><g fill="#2e7d32"><ellipse cx="30" cy="80" rx="7" ry="4"/><ellipse cx="22" cy="104" rx="6" ry="3.5"/><ellipse cx="48" cy="72" rx="6" ry="3.5"/></g>
+<g class="lj"><path d="M64,113 L280,113 C272,100 252,96 232,96 L84,98 Z" fill="#b0124f"/><ellipse cx="160" cy="107" rx="62" ry="7" fill="#f48fb1"/></g>
+<g class="uj"><path d="M64,104 L282,100 C284,112 270,122 250,124 L72,124 Z" fill="#8e0e3f"/></g>
+<g class="lj">${tth(100,262,111,-1)}<path d="M52,111 L280,111 C294,113 294,127 279,131 C240,147 150,153 100,149 C70,147 53,135 52,111 Z" fill="url(#cgL)" stroke="#1f5e2a" stroke-width="3"/>
+<path d="M120,140 q6,-4 12,0 M160,143 q6,-4 12,0 M200,141 q6,-4 12,0 M240,135 q6,-4 12,0" fill="none" stroke="#9aab55" stroke-width="2"/></g>
+<g class="uj">${tth(92,268,104,1)}<path d="M48,106 C40,70 60,40 105,34 C150,28 190,50 230,66 L284,86 C299,92 297,105 284,107 L62,109 Z" fill="url(#cgU)" stroke="#1f5e2a" stroke-width="3"/>
+<ellipse cx="270" cy="85" rx="15" ry="9" fill="#5cbf4a" stroke="#1f5e2a" stroke-width="2.5"/><ellipse cx="274" cy="85" rx="3.5" ry="2.5" fill="#1f5e2a"/>
+<g fill="#2e8b3a"><ellipse cx="152" cy="52" rx="7" ry="3.5"/><ellipse cx="178" cy="60" rx="7" ry="3.5"/><ellipse cx="204" cy="69" rx="7" ry="3.5"/><ellipse cx="230" cy="78" rx="6" ry="3"/><ellipse cx="166" cy="72" rx="5" ry="2.5"/><ellipse cx="196" cy="84" rx="5" ry="2.5"/></g>
+<circle cx="112" cy="40" r="27" fill="url(#cgU)" stroke="#1f5e2a" stroke-width="3"/><circle cx="116" cy="38" r="18" fill="#fff"/><circle cx="120" cy="38" r="12" fill="url(#cgE)"/><ellipse cx="121" cy="38" rx="3.6" ry="10" fill="#111"/><circle cx="114" cy="31" r="4.5" fill="#fff"/><circle cx="125" cy="45" r="2" fill="#fff"/>
+<ellipse class="lid" cx="116" cy="38" rx="19.5" ry="20" fill="#4caf50" stroke="#1f5e2a" stroke-width="2"/>
+<path d="M98,22 Q114,12 132,20" fill="none" stroke="#1f5e2a" stroke-width="4" stroke-linecap="round"/></g>
+</g></svg>`;
+// a calm pond scene behind the crocodile (CSS and SVG only, nothing heavy)
+const REED='<svg class="reed" viewBox="0 0 60 200"><path d="M14,200 Q10,100 18,20 M30,200 Q32,90 26,0 M46,200 Q50,110 42,30" stroke="#3f8a35" stroke-width="5" fill="none" stroke-linecap="round"/><rect x="21" y="8" width="10" height="40" rx="5" fill="#7a4a22"/><rect x="37" y="34" width="9" height="34" rx="4.5" fill="#7a4a22"/><path d="M18,120 Q-4,90 2,60 M46,130 Q66,100 58,70" stroke="#5aa845" stroke-width="4" fill="none"/></svg>';
+function pondScene(){ const wv=y=>`<svg class="waves" style="top:calc(`+y+`% - 12px)" viewBox="0 0 100 10" preserveAspectRatio="none"><path d="M0,5 Q2.5,1 5,5 T10,5 T15,5 T20,5 T25,5 T30,5 T35,5 T40,5 T45,5 T50,5 T55,5 T60,5 T65,5 T70,5 T75,5 T80,5 T85,5 T90,5 T95,5 T100,5 V10 H0Z" fill="rgba(255,255,255,.35)"/></svg>`;
+ return `<div class="scn"><div class="sun"></div><div class="hill" style="left:-5%;width:45%;height:16%"></div><div class="hill" style="right:-8%;width:50%;height:12%;background:linear-gradient(#a5dc7a,#6ab955)"></div>${wv(50)}${wv(70)}${wv(88)}
+  <div style="position:absolute;left:2%;bottom:30%">${REED}</div><div style="position:absolute;right:3%;bottom:34%;transform:scaleX(-1)">${REED}</div>
+  <div class="lily" style="left:16%;top:78%"><i>🌸</i></div><div class="lily" style="right:20%;top:84%"></div><div class="lily" style="left:44%;top:90%;width:80px"><i>🌼</i></div></div>`; }
 // 🐊 the hungry crocodile always opens its mouth toward the bigger number
 const Croc={ start(){ stage.className='pond'; this.seq=seq2('big','small',10); this.R=run('croc',10,'تمساح شبعان! 🐊',R=>this.round(R)); this.R.go(); },
- round(R){ const W=innerWidth,H=innerHeight,k=this.k=this.seq[R.i],[a,b]=this.p=pair(R.i); stage.innerHTML=''; const aid=aidOf('croc')<2;
+ round(R){ const W=innerWidth,H=innerHeight,k=this.k=this.seq[R.i],[a,b]=this.p=pair(R.i); stage.innerHTML=''; const aid=aidOf('croc')<2; stage.innerHTML=pondScene();
   this.c=[a,b].map((n,j)=>{ const e=h('div',{class:'ncard','data-n':n},card(n,aid),stage); place(e,j?W*.08:W*.66,H*.3); return e; });
-  this.croc=obj('🐊',W/2-90,H*.36,null,'croc'); this.face();
+  this.croc=h('div',{class:'croc'},CROC_SVG,stage); const cw=Math.min(W*.3,360); place(this.croc,W/2-cw/2,H*.34); this.face();
   this.q=k==='big'?'أين العدد الأكبر؟':'أين العدد الأصغر؟'; setGoal(`<span>${this.q}</span><span class="tag" style="background:${CL[k]}">${WD[k]}</span>${R.steps()}`); tip('التمساح يفتح فمه نحو الأكبر 🐊'); Speech.say(this.q);
   if(aidOf('croc')===0&&R.i<4) T.set(()=>{ const t=this.target(); const e=this.c.find(z=>+z.dataset.n===t); if(e&&!R.busy) e.classList.add('hint'); },2800); },
  target(){ const [a,b]=this.p; return this.k==='big'?Math.max(a,b):Math.min(a,b); },
- face(){ const [a,b]=this.p, bigRight=a>b; this.croc.style.transform=`scaleX(${bigRight?-1:1})`; }, // 🐊 looks left by default; the right card holds the first number
+ face(){ const [a,b]=this.p, bigRight=a>b; this.croc.style.transform=`scaleX(${bigRight?1:-1})`; }, // the drawing opens to the right; the right card holds the first number
  tap(x,y,t){ const e=t&&t.closest('.ncard'); if(!e||this.R.busy) return; const n=+e.dataset.n, want=this.target(), [a,b]=this.p, big=Math.max(a,b), sm=Math.min(a,b);
   if(n===want){ e.classList.remove('hint'); this.croc.classList.add('eat'); Snd.play('thud'); const msg=`${NUM(big)} أكبر من ${NUM(sm)}`; tip(msg); Speech.say(`${NNAME[big]} أكبر من ${NNAME[sm]}`); this.R.win(WD[this.k],CL[this.k],2000); }
   else { e.classList.remove('no'); void e.offsetWidth; e.classList.add('no'); this.R.miss(this.k==='big'?`${NUM(n)} أصغر من ${NUM(want)}. انظر إلى فم التمساح 🐊`:`${NUM(n)} أكبر من ${NUM(want)}. الأصغر هو الذي لا يأكله التمساح`); this.c.find(z=>+z.dataset.n===want).classList.add('hint'); } },

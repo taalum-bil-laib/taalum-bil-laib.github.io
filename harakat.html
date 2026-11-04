@@ -192,32 +192,35 @@ i.ps svg{width:20px;height:20px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 /* Performance guard for every 3D game (injected by build.ps1 right after three.js):
-   - weak devices (tablets, phones, low-end PCs) start with a lighter picture
-   - if the game still runs slowly, the picture gets lighter step by step (lower resolution, then no shadows)
+   - every device starts with the full picture the game asks for (phones are only capped at 2× pixels)
+   - only if the game stays really slow (under 20 fps for 10 s) does the picture get lighter, one small step at a time,
+     and it climbs back up by itself when the game runs smoothly again
    - if the graphics card gives up (white screen), the game reloads itself; progress is kept in localStorage */
 (function(){
  if(!window.THREE||THREE.__guarded) return; THREE.__guarded=true;
- const weak=(navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4||/Android|iPad|iPhone|Mobile|CrOS|Silk/i.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
- let tier=weak?1:0, R=null, SC=null;
- const cap=()=>tier===0?Infinity:tier===1?1:tier===2?.75:.6;
+ const phone=/Android|iPhone|Mobile/i.test(navigator.userAgent);
+ let tier=0, R=null, SC=null, want=1, shadowsWanted=null;
+ const cap=()=>[phone?2:Infinity,1.5,1.15,1][tier];
  const R0=THREE.WebGLRenderer;
- function lighter(){ if(!R||tier>=3) return; tier++;
-  R.setPixelRatio(R.getPixelRatio()); R.setSize(innerWidth,innerHeight,false);
-  if(tier>=2&&R.shadowMap.enabled){ R.shadowMap.enabled=false; if(SC) SC.traverse(o=>{ const ms=Array.isArray(o.material)?o.material:o.material?[o.material]:[]; ms.forEach(m=>m.needsUpdate=true); }); }
-  if(tier>=3){ R.setPixelRatio(.6); R.setSize(innerWidth,innerHeight,false); } }
+ function refreshMats(){ if(SC) SC.traverse(o=>{ const ms=Array.isArray(o.material)?o.material:o.material?[o.material]:[]; ms.forEach(m=>m.needsUpdate=true); }); }
+ function apply(){ if(!R) return; R.__setPR(Math.min(want,cap())); R.setSize(innerWidth,innerHeight,false);
+  const sh=tier<3&&shadowsWanted; if(shadowsWanted!=null&&R.shadowMap.enabled!==sh){ R.shadowMap.enabled=sh; refreshMats(); } }
  function lost(){ if(document.getElementById('__lost')) return; const d=document.createElement('div'); d.id='__lost'; d.dir='rtl';
   d.style.cssText='position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:#0a1030;color:#ffc83a;font:800 26px Tahoma,sans-serif;text-align:center;padding:20px';
-  d.textContent='جارٍ إعادة تشغيل اللعبة… 🔄'; document.body.appendChild(d); try{ sessionStorage.setItem('__guardTier',String(Math.max(2,tier))); }catch(e){} setTimeout(()=>location.reload(),1200); }
- // a reload after a crash comes back lighter
+  d.textContent='جارٍ إعادة تشغيل اللعبة… 🔄'; document.body.appendChild(d); try{ sessionStorage.setItem('__guardTier',String(Math.min(3,tier+1))); }catch(e){} setTimeout(()=>location.reload(),1200); }
+ // a reload after a crash comes back one step lighter
  try{ const t=+sessionStorage.getItem('__guardTier'); if(t>tier) tier=t; }catch(e){}
- function Guarded(o){ const r=new R0(o); R=r; const render=r.render.bind(r); r.render=function(s,c){ SC=s; return render(s,c); };
-  // the games pick their own quality; the guard only ever lowers it (three r128 defines these per instance)
-  const setPR=r.setPixelRatio.bind(r); r.setPixelRatio=v=>setPR(Math.min(v,cap())); r.setPixelRatio(devicePixelRatio||1);
+ function Guarded(o){ const r=new R0(o); R=r; const render=r.render.bind(r); r.render=function(s,c){ SC=s; if(shadowsWanted==null) shadowsWanted=r.shadowMap.enabled; return render(s,c); };
+  // the games pick their own quality; the guard only lowers it while the device is struggling (three r128 defines these per instance)
+  r.__setPR=r.setPixelRatio.bind(r); r.setPixelRatio=v=>{ want=v; r.__setPR(Math.min(v,cap())); }; r.setPixelRatio(devicePixelRatio||1);
   r.domElement.addEventListener('webglcontextlost',e=>{ e.preventDefault(); lost(); },false);
-  if(tier>=2) setTimeout(()=>{ if(r.shadowMap.enabled){ r.shadowMap.enabled=false; } },0);
-  let last=performance.now(), acc=0, n=0;
-  (function watch(t){ requestAnimationFrame(watch); const dt=t-last; last=t; if(document.hidden||dt>400||dt<=0) return; acc+=dt; n++;
-   if(acc>4000){ const fps=1000*n/acc; acc=0; n=0; if(fps<30) lighter(); } })(last);
+  if(tier>=3) setTimeout(apply,0);
+  const t0=performance.now(); let last=t0, acc=0, n=0, slow=0, fast=0;
+  (function watch(t){ requestAnimationFrame(watch); const dt=t-last; last=t; if(document.hidden||dt>400||dt<=0||t-t0<8000) return; acc+=dt; n++;
+   if(acc>5000){ const fps=1000*n/acc; acc=0; n=0;
+    if(fps<20){ fast=0; if(++slow>=2&&tier<3){ tier++; slow=0; apply(); } }
+    else if(fps>50){ slow=0; if(++fast>=3&&tier>0){ tier--; fast=0; apply(); } }
+    else { slow=0; fast=0; } } })(last);
   return r; }
  Guarded.prototype=R0.prototype; THREE.WebGLRenderer=Guarded;
 })();
