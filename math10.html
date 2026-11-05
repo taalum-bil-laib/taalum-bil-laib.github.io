@@ -280,6 +280,11 @@ function beads(n,size,vertical){ const c=n===10?'#ffb300':MONT[n]; const b=`<i s
 // teen numbers: the golden ten bar plus the extra beads
 const teen=(n,size)=>n<=10?beads(n,size):`<span style="display:inline-flex;gap:6px;align-items:center">${beads(10,size)}${beads(n-10,size)}</span>`;
 const sayNum=n=>Speech.say(NNAME[n],.8);
+// every activity climbs four steps, shown as a small tag beside the question
+const lvChip=R=>{ const L=[['سهل جدًا','#2e9d3a'],['سهل','#1e88e5'],['متوسط','#ff8a3d'],['تحدٍّ','#8e24aa']][Math.min(3,Math.floor(R.i/R.total*4))]; return `<span class="tag" style="background:${L[1]}">${L[0]}</span>`; };
+// the error corrector: stop the game for a moment and count the things with the child, one by one
+css(`.cnthit{outline:4px solid #ffb300;outline-offset:2px;scale:1.25;transition:scale .15s}`);
+function countWith(G,els,done,from){ G.fix=true; els.forEach((e,k)=>T.set(()=>{ e.classList.add('cnthit'); Snd.play('pop'); Speech.say(NNAME[(from||0)+k+1],1.1); },k*650)); T.set(()=>{ els.forEach(e=>e.classList.remove('cnthit')); G.fix=false; if(done) done(); },els.length*650+350); }
 
 /* ---------- عائلة العشرة: الأعداد ١١–٢٠ ---------- */
 const META={prefix:'math10_',title:'عائلة العشرة',eyebrow:'الرياضيات · الأعداد من ١١ إلى ٢٠',lead:'العشرة عصا خرز ذهبية، و١٣ = عصا ذهبية + ٣ خرزات وردية. لوحة السحر تصنع الأعداد، ثم نعدّ الخرز، ثم نصنع العدد بأيدينا.'};
@@ -297,8 +302,8 @@ const Magic={ start(){ stage.className='yard'; this.list=[11,12,13,14].concat(sh
  round(R){ const W=innerWidth,H=innerHeight,n=this.n=this.list[R.i],u=n-10; stage.innerHTML='';
   const s=h('div',{class:'seg10'},'<b class="one">١</b><b class="zero" id="zero">٠</b>',stage); s.style.top=(H*.2)+'px';
   this.br=h('div',{class:'beadrow'},teen(10,bsz()),stage); this.br.style.top=(H*.2+Math.min(220,H*.32))+'px';
-  const set=new Set([u]); while(set.size<4) set.add(1+((rnd()*9)|0)); [...set].sort(()=>rnd()-.5).forEach((d,i,a)=>{ const c=h('div',{class:'dcard','data-d':d},`<span style="color:${TXT(d)}">${NUM(d)}</span>`,stage); place(c,W/2+(i-(a.length-1)/2)*(Math.min(130,W*.14))-48,H*.72); draggable(c,(x,y)=>this.drop(c,x,y)); });
-  this.q=`اصنع العدد ${NNAME[n]}`; setGoal(`<span>${this.q}</span><b style="font-size:1.3em;color:${TXT(n)}">${NUM(n)}</b>${R.steps()}`); tip('ضع البطاقة فوق الصفر ✋'); Speech.say(this.q);
+  const set=new Set([u]), many=R.i<3?2:R.i<6?3:4; while(set.size<many){ const d=1+((rnd()*9)|0); if(R.i>=3||Math.abs(d-u)>=3) set.add(d); } [...set].sort(()=>rnd()-.5).forEach((d,i,a)=>{ const c=h('div',{class:'dcard','data-d':d},`<span style="color:${TXT(d)}">${NUM(d)}</span>`,stage); place(c,W/2+(i-(a.length-1)/2)*(Math.min(130,W*.14))-48,H*.72); draggable(c,(x,y)=>this.drop(c,x,y)); });
+  this.q=`اصنع العدد ${NNAME[n]}`; setGoal(`<span>${this.q}</span><b style="font-size:1.3em;color:${TXT(n)}">${NUM(n)}</b>${lvChip(R)}${R.steps()}`); tip('ضع البطاقة فوق الصفر ✋'); Speech.say(this.q);
   if(aidOf('magic')===0&&R.i<4) T.set(()=>{ const c=$(`.dcard[data-d="${u}"]`); if(c&&!R.busy) c.classList.add('glow'); },2600); },
  drop(c,x,y){ const z=$('#zero'); if(!hit(x,y,z,30)) return false; const d=+c.dataset.d, R=this.R, n=this.n;
   if(d===n-10){ c.remove(); z.classList.remove('zero'); z.innerHTML=`<span style="color:${TXT(d)}">${NUM(d)}</span>`; this.br.innerHTML=teen(n,bsz()); Snd.play('place'); R.win(NNAME[n],TXT(n),1700,[String(n),NUM(n)]); return true; }
@@ -306,22 +311,25 @@ const Magic={ start(){ stage.className='yard'; this.list=[11,12,13,14].concat(sh
  again(){ Speech.say(this.q); } };
 
 // 🟨 how many beads? (a golden ten bar and the extra beads)
-const Count={ start(){ stage.className='yard'; this.list=shuffle(teens.concat([20])); this.R=run('count',10,'عدّاد الخرز! 🟨',R=>this.round(R)); this.R.go(); },
- round(R){ const H=innerHeight,n=this.n=this.list[R.i]; stage.innerHTML=''; const b=h('div',{class:'beadrow'},teen(n,Math.min(40,innerWidth/24)),stage); b.style.top=(H*.34)+'px';
-  this.q='كم خرزة؟'; setGoal(`<span>كم خرزة؟ (العصا الذهبية = ١٠)</span>${R.steps()}`); tip(''); Speech.say('كم خرزة؟ العصا الذهبية فيها عشرة');
-  const set=new Set([n]); while(set.size<3){ const m=n+pick([-3,-2,-1,1,2,3]); if(m>=11&&m<=20) set.add(m); } opts(shuffle([...set]).map(v=>({v,label:NUM(v),color:'#1a3fb0'})),(v,bt)=>this.pick(v,bt));
+const Count={ start(){ stage.className='yard'; this.list=[11,12,13].concat(shuffle([14,15,16,17,18,19,20])); this.R=run('count',10,'عدّاد الخرز! 🟨',R=>this.round(R)); this.R.go(); },
+ round(R){ const H=innerHeight,n=this.n=this.list[R.i]; this.fix=false; stage.innerHTML=''; const b=this.row=h('div',{class:'beadrow'},teen(n,Math.min(40,innerWidth/24)),stage); b.style.top=(H*.34)+'px';
+  this.q='كم خرزة؟'; setGoal(`<span>كم خرزة؟ (العصا الذهبية = ١٠)</span>${lvChip(R)}${R.steps()}`); tip(''); Speech.say('كم خرزة؟ العصا الذهبية فيها عشرة');
+  const set=new Set([n]), many=R.i<3?2:3; while(set.size<many){ const m=n+pick(R.i<3?[3,4,5]:[-3,-2,-1,1,2,3]); if(m>=11&&m<=20) set.add(m); } opts(shuffle([...set]).map(v=>({v,label:NUM(v),color:'#1a3fb0'})),(v,bt)=>this.pick(v,bt));
   if(aidOf('count')===0&&R.i<4) T.set(()=>{ const bt=optBtn(n); if(bt&&!R.busy) bt.classList.add('hint'); },3000); },
- pick(v,b){ const R=this.R,n=this.n; if(R.busy) return; if(v===n){ closeOpts(); R.win(NNAME[n],TXT(n),1500,[String(n),NUM(n)]); return; } shake(b); R.miss(`العصا ١٠، ونعدّ الباقي: ${NUM(n-10)}. إذن ${NUM(n)}.`); optBtn(n).classList.add('hint'); },
+ pick(v,b){ const R=this.R,n=this.n; if(R.busy||this.fix) return; if(v===n){ closeOpts(); R.win(NNAME[n],TXT(n),1500,[String(n),NUM(n)]); return; } shake(b); R.miss('العصا الذهبية عشرة، ونكمل العدّ معًا 👇'); const bars=this.row.querySelectorAll('.bbar'), extra=bars.length>1?[...bars[1].querySelectorAll('i')]:[...bars[0].querySelectorAll('i')].slice(10);
+  this.fix=true; T.set(()=>countWith(this,extra,()=>{ const k=optBtn(n); if(k) k.classList.add('hint'); tip(`آخر رقم هو ${NUM(n)} 👆`,true); },10),2600); },
  again(){ Speech.say('كم خرزة؟'); } };
 
 // ✋ make the number: add beads one by one after the ten bar
-const Make={ start(){ stage.className='yard'; this.list=shuffle(teens.slice()).slice(0,8); this.R=run('make',8,'صانع الأعداد! ✋',R=>this.round(R)); this.R.go(); },
- round(R){ const H=innerHeight,n=this.n=this.list[R.i]; this.k=10; stage.innerHTML=''; this.mat=h('div',{class:'mat'},'',stage); this.mat.style.top=(H*.3)+'px'; this.draw();
-  this.q=`اصنع العدد ${NNAME[n]} بالخرز`; setGoal(`<span>اصنع</span><b style="font-size:1.4em;color:${TXT(n)}">${NUM(n)}</b>${R.steps()}`); tip('العصا الذهبية = ١٠. أضف خرزات واحدة واحدة ✋'); Speech.say(this.q);
+const Make={ start(){ stage.className='yard'; this.list=[11,12,13].concat(shuffle([14,15,16,17,18,19]).slice(0,5)); this.R=run('make',8,'صانع الأعداد! ✋',R=>this.round(R)); this.R.go(); },
+ round(R){ const H=innerHeight,n=this.n=this.list[R.i]; this.k=10; this.fix=false; stage.innerHTML=''; this.mat=h('div',{class:'mat'},'',stage); this.mat.style.top=(H*.3)+'px'; this.draw();
+  this.q=`اصنع العدد ${NNAME[n]} بالخرز`; setGoal(`<span>اصنع</span><b style="font-size:1.4em;color:${TXT(n)}">${NUM(n)}</b>${lvChip(R)}${R.steps()}`); tip('العصا الذهبية = ١٠. أضف خرزات واحدة واحدة ✋'); Speech.say(this.q);
   opts([{v:'minus',label:'أزل خرزة',em:'➖',color:'#78909c'},{v:'plus',label:'أضف خرزة',em:'➕',color:'#e53935'},{v:'ok',label:'انتهيت',em:'✅',color:'#2e9d3a'}],v=>this.act(v)); },
  draw(){ this.mat.innerHTML=`${beads(10,bsz())}${this.k>10?beads(this.k-10,bsz()):''}<b style="font-family:var(--display);font-size:54px;color:#1a1a2e;margin-inline-start:10px">${NUM(this.k)}</b>`; },
- act(v){ const R=this.R; if(R.busy) return; if(v==='plus'&&this.k<20){ this.k++; Snd.play('pop'); Speech.say(NNAME[this.k]); this.draw(); } else if(v==='minus'&&this.k>10){ this.k--; Snd.play('whoosh'); this.draw(); }
-  else if(v==='ok'){ if(this.k===this.n){ closeOpts(); R.win(NNAME[this.n],TXT(this.n),1500,[String(this.n),NUM(this.n)]); } else R.miss(this.k>this.n?`عندنا ${NUM(this.k)}، هذا أكثر من ${NUM(this.n)}. أزل خرزة ➖`:`عندنا ${NUM(this.k)}، نحتاج ${NUM(this.n)}. أضف خرزة ➕`); } },
+ act(v){ const R=this.R; if(R.busy||this.fix) return; if(v==='plus'&&this.k<20){ this.k++; Snd.play('pop'); Speech.say(NNAME[this.k]); this.draw(); } else if(v==='minus'&&this.k>10){ this.k--; Snd.play('whoosh'); this.draw(); }
+  else if(v==='ok'){ if(this.k===this.n){ closeOpts(); R.win(NNAME[this.n],TXT(this.n),1500,[String(this.n),NUM(this.n)]); } else { R.miss('لنبنِ العدد معًا 👇'); // the corrector: back to the ten bar, then add the beads while counting aloud
+    this.fix=true; const n=this.n; T.set(()=>{ this.k=10; this.draw(); },1400); for(let q=11;q<=n;q++) T.set(()=>{ this.k=q; this.draw(); Snd.play('pop'); Speech.say(NNAME[q],1); },1400+(q-10)*800);
+    T.set(()=>{ this.fix=false; const b=optBtn('ok'); if(b) b.classList.add('hint'); tip(`هذا ${NUM(n)} ✅ اضغط «انتهيت»`,true); },1400+(n-10)*800+500); } } },
  again(){ Speech.say(this.q); } };
 
 const ACTS=[

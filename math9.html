@@ -280,6 +280,11 @@ function beads(n,size,vertical){ const c=n===10?'#ffb300':MONT[n]; const b=`<i s
 // teen numbers: the golden ten bar plus the extra beads
 const teen=(n,size)=>n<=10?beads(n,size):`<span style="display:inline-flex;gap:6px;align-items:center">${beads(10,size)}${beads(n-10,size)}</span>`;
 const sayNum=n=>Speech.say(NNAME[n],.8);
+// every activity climbs four steps, shown as a small tag beside the question
+const lvChip=R=>{ const L=[['سهل جدًا','#2e9d3a'],['سهل','#1e88e5'],['متوسط','#ff8a3d'],['تحدٍّ','#8e24aa']][Math.min(3,Math.floor(R.i/R.total*4))]; return `<span class="tag" style="background:${L[1]}">${L[0]}</span>`; };
+// the error corrector: stop the game for a moment and count the things with the child, one by one
+css(`.cnthit{outline:4px solid #ffb300;outline-offset:2px;scale:1.25;transition:scale .15s}`);
+function countWith(G,els,done,from){ G.fix=true; els.forEach((e,k)=>T.set(()=>{ e.classList.add('cnthit'); Snd.play('pop'); Speech.say(NNAME[(from||0)+k+1],1.1); },k*650)); T.set(()=>{ els.forEach(e=>e.classList.remove('cnthit')); G.fix=false; if(done) done(); },els.length*650+350); }
 
 /* ---------- رسّام الأرقام: تتبّع الرقم ثم كتابته ١–٢٠ ---------- */
 const META={prefix:'math9_',title:'رسّام الأرقام',eyebrow:'الرياضيات · الأعداد: نسخ الرقم وكتابته (١–٢٠)',lead:'يتتبّع الطالب الرقم بإصبعه بلونه، ووراءه أثر من النجوم، فيتحول الرقم إلى شكله (٩ مصاصة 🍭) ويضيء فانوسه في شارع الأرقام. ثم يكتبه على خط منقّط، ثم من ذاكرته.'};
@@ -304,7 +309,7 @@ function Tracer(id,list,guide,title){ return {
   if(guide!=='none'){ const s=this.startPt(); if(s){ const d=h('div',{class:'dot0'},'',b); d.style.left=s[0]+'px'; d.style.top=s[1]+'px'; } }
   const k=this.kc; k.onpointerdown=e=>this.pdown(e); k.onpointermove=e=>this.pmove(e); k.onpointerup=k.onpointercancel=e=>this.pup(e);
   this.q=guide==='none'?`اكتب الرقم ${NNAME[n]}`:`ارسم الرقم ${NNAME[n]}`;
-  setGoal(`<span>${this.q}</span><b style="font-size:1.3em;color:${TXT(n)};-webkit-text-stroke:1px rgba(0,0,0,.15)">${guide==='none'?'':NUM(n)}</b>${R.steps()}`); tip(guide==='none'?'اكتب الرقم بإصبعك في اللوح ✏️':'ابدأ من النقطة الخضراء وارسم فوق الرقم ✏️'); Speech.say(this.q);
+  setGoal(`<span>${this.q}</span><b style="font-size:1.3em;color:${TXT(n)};-webkit-text-stroke:1px rgba(0,0,0,.15)">${guide==='none'?'':NUM(n)}</b>${lvChip(R)}${R.steps()}`); tip(guide==='none'?'اكتب الرقم بإصبعك في اللوح ✏️':'ابدأ من النقطة الخضراء وارسم فوق الرقم ✏️'); Speech.say(this.q);
   opts([{v:'clear',label:'امسح',em:'🧽',color:'#78909c'},{v:'done',label:'انتهيت',em:'✅',color:'#2e9d3a'}],v=>v==='clear'?this.clear():this.check(true)); },
  font(){ return `800 ${this.fs}px ${FONT}`; },
  mask(thick){ const c=document.createElement('canvas'); c.width=this.mw; c.height=this.mh; const x=c.getContext('2d'), s=this.mw/this.bw; x.scale(s,s); x.font=this.font(); x.textAlign='center'; x.textBaseline='middle'; x.fillStyle='#000'; x.fillText(NUM(this.n),this.bw/2,this.bh/2+this.fs*.06);
@@ -352,9 +357,10 @@ function Tracer(id,list,guide,title){ return {
  check(asked){ if(this.R.busy||!this.strokes.length){ if(asked) this.R.miss('ارسم الرقم أولًا ✏️'); return; } const mem=guide==='none';
   if(mem){ const c=this.classify(); if(c.best===this.n&&c.bestF>=.5) return this.win();
    if(asked){ this.R.miss(c.best&&c.bestF>=.5?`هذا يشبه الرقم ${NUM(c.best)} 🙂 نريد ${NNAME[this.n]}. انظر إليه ثم امسح وحاول`:'أكمل كتابة الرقم ✏️'); this.drawGuide('solid'); } return; }
-  const {rec,prec}=this.score();
-  if(rec>=.7&&prec>=.6) return this.win();
-  if(asked) this.R.miss(prec<.6?'خرجت عن الرقم 🙂 امسح وحاول مرة أخرى':'أكمل رسم الرقم ✏️'); },
+  // the first numbers forgive a shaky hand; the line gets stricter step by step
+  const {rec,prec}=this.score(), e=this.R.i<3?.14:this.R.i<6?.07:0;
+  if(rec>=.7-e&&prec>=.6-e) return this.win();
+  if(asked){ this.R.miss(prec<.6-e?'انظر إلى الرقم، ثم نرسمه معًا 🙂':'أكمل رسم الرقم ✏️'); if(this.R.tries>=2){ this.clear(); this.drawGuide('',true); T.set(()=>this.drawGuide(guide),1600); } } },
  win(){ const n=this.n, R=this.R, b=this.board; this.drawGuide('',true); this.kc.getContext('2d').clearRect(0,0,this.bw,this.bh); closeOpts();
   if(n<=10){ const p=h('div',{class:'pop2'},NOBJ[n],stage); const r=b.getBoundingClientRect(); p.style.left=(r.right-60)+'px'; p.style.top=(r.top-40)+'px'; }
   PR._lit=[...new Set((PR._lit||[]).concat(n))]; save(); const lamp=$$('.lamps i')[n-1]; if(lamp) lamp.classList.add('on');

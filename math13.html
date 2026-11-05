@@ -280,6 +280,11 @@ function beads(n,size,vertical){ const c=n===10?'#ffb300':MONT[n]; const b=`<i s
 // teen numbers: the golden ten bar plus the extra beads
 const teen=(n,size)=>n<=10?beads(n,size):`<span style="display:inline-flex;gap:6px;align-items:center">${beads(10,size)}${beads(n-10,size)}</span>`;
 const sayNum=n=>Speech.say(NNAME[n],.8);
+// every activity climbs four steps, shown as a small tag beside the question
+const lvChip=R=>{ const L=[['سهل جدًا','#2e9d3a'],['سهل','#1e88e5'],['متوسط','#ff8a3d'],['تحدٍّ','#8e24aa']][Math.min(3,Math.floor(R.i/R.total*4))]; return `<span class="tag" style="background:${L[1]}">${L[0]}</span>`; };
+// the error corrector: stop the game for a moment and count the things with the child, one by one
+css(`.cnthit{outline:4px solid #ffb300;outline-offset:2px;scale:1.25;transition:scale .15s}`);
+function countWith(G,els,done,from){ G.fix=true; els.forEach((e,k)=>T.set(()=>{ e.classList.add('cnthit'); Snd.play('pop'); Speech.say(NNAME[(from||0)+k+1],1.1); },k*650)); T.set(()=>{ els.forEach(e=>e.classList.remove('cnthit')); G.fix=false; if(done) done(); },els.length*650+350); }
 
 /* ---------- مونتسوري الأعداد: القضبان، صندوق المغازل، البطاقات والعدادات ---------- */
 const META={prefix:'math13_',title:'مونتسوري الأعداد',eyebrow:'الرياضيات · أنشطة مونتسوري للأعداد (٠–١٠)',lead:'أدوات مونتسوري الحقيقية صارت ألعابًا: نعدّ أجزاء القضبان الحمراء والزرقاء، ونملأ صندوق المغازل ونكتشف أن الصفر لا شيء، ونرتّب العدادات أزواجًا لنعرف الزوجي والفردي.'};
@@ -300,10 +305,10 @@ css(`.rod{position:absolute;display:flex;direction:rtl;flex-direction:row;height
 @keyframes pop13{from{scale:.2}}`);
 
 // 📏 number rods: count the red and blue parts, then name the rod
-const Rods={ start(){ stage.className='room'; this.list=[1,2,3].concat(shuffle([4,5,6,7,8,9,10])); this.R=run('rods',10,'بطل القضبان! 📏',R=>this.round(R)); this.R.go(); },
- round(R){ const W=innerWidth,H=innerHeight,n=this.n=this.list[R.i]; this.k=0; this.asking=false; stage.innerHTML=''; const sw=Math.min(W*.085,78);
+const Rods={ start(){ stage.className='room'; this.list=[1,2,3,4,5].concat(shuffle([6,7,8,9,10])); this.R=run('rods',10,'بطل القضبان! 📏',R=>this.round(R)); this.R.go(); },
+ round(R){ const W=innerWidth,H=innerHeight,n=this.n=this.list[R.i]; this.k=0; this.asking=false; this.fix=false; stage.innerHTML=''; const sw=Math.min(W*.085,78);
   this.rod=h('div',{class:'rod'},Array.from({length:n},(_,i)=>`<i data-k="${i+1}" style="width:${sw}px;background:${i%2?'#1e6fd9':'#e53935'}"></i>`).join(''),stage); place(this.rod,W*.92-n*sw,H*.42);
-  this.q='عُدّ أجزاء القضيب: اضغط على كل جزء'; setGoal(`<span>عُدّ أجزاء القضيب</span><span class="tag" style="background:#e53935">أحمر</span><span class="tag" style="background:#1e6fd9">أزرق</span>${R.steps()}`); tip('ابدأ من اليمين 👉 الجزء الأحمر'); Speech.say(this.q);
+  this.q='عُدّ أجزاء القضيب: اضغط على كل جزء'; setGoal(`<span>عُدّ أجزاء القضيب</span><span class="tag" style="background:#e53935">أحمر</span><span class="tag" style="background:#1e6fd9">أزرق</span>${lvChip(R)}${R.steps()}`); tip('ابدأ من اليمين 👉 الجزء الأحمر'); Speech.say(this.q);
   if(aidOf('rods')===0) T.set(()=>this.hintNext(),2400); },
  hintNext(){ $$('.rod i.hint').forEach(e=>e.classList.remove('hint')); const s=$(`.rod i[data-k="${this.k+1}"]`); if(s&&!this.R.busy) s.classList.add('hint'); },
  tap(x,y,t){ const s=t&&t.closest('.rod i'); if(!s||this.R.busy||this.asking) return; const k=+s.dataset.k;
@@ -311,10 +316,10 @@ const Rods={ start(){ stage.className='room'; this.list=[1,2,3].concat(shuffle([
   s.classList.remove('hint'); s.innerHTML=`<b>${NUM(k)}</b>`; this.k++; Snd.play('pop'); Speech.say(NNAME[k],1); tip('');
   if(this.k===this.n) T.set(()=>this.ask(),700); else if(aidOf('rods')===0) T.set(()=>this.hintNext(),1500); },
  ask(){ const n=this.n; this.asking=true; this.q='كم جزءًا في القضيب؟'; Speech.say(this.q); tip('آخر رقم عددناه هو الجواب 🙂');
-  const set=new Set([n]); while(set.size<3){ const m=n+pick([-2,-1,1,2]); if(m>=1&&m<=10) set.add(m); } opts(shuffle([...set]).map(v=>({v,label:NUM(v),color:'#e53935'})),(v,b)=>this.pick(v,b));
+  const easy=this.R.i<3, set=new Set([n]), many=easy?2:3; while(set.size<many){ const m=n+pick(easy?[3,4,5]:[-2,-1,1,2]); if(m>=1&&m<=10) set.add(m); } opts(shuffle([...set]).map(v=>({v,label:NUM(v),color:'#e53935'})),(v,b)=>this.pick(v,b));
   if(aidOf('rods')<2) T.set(()=>{ const b=optBtn(n); if(b&&!this.R.busy) b.classList.add('hint'); },3000); },
- pick(v,b){ const R=this.R,n=this.n; if(R.busy) return; if(v===n){ closeOpts(); const c=h('div',{class:'big13'},NUM(n),stage); c.style.top=(innerHeight*.16)+'px'; c.style.color=TXT(n); Snd.play('place'); R.win(NNAME[n],TXT(n),1500,[String(n),NUM(n)]); return; }
-  shake(b); R.miss(`آخر جزء عددناه رقمه ${NUM(n)}، إذن القضيب ${NUM(n)}`); optBtn(n).classList.add('hint'); },
+ pick(v,b){ const R=this.R,n=this.n; if(R.busy||this.fix) return; if(v===n){ closeOpts(); const c=h('div',{class:'big13'},NUM(n),stage); c.style.top=(innerHeight*.16)+'px'; c.style.color=TXT(n); Snd.play('place'); R.win(NNAME[n],TXT(n),1500,[String(n),NUM(n)]); return; }
+  shake(b); R.miss('لنعدّ الأجزاء معًا 👇'); countWith(this,[...$$('.rod i')],()=>{ const k=optBtn(n); if(k) k.classList.add('hint'); tip(`آخر جزء رقمه ${NUM(n)} 👆`,true); }); },
  again(){ Speech.say(this.q); } };
 
 // 🥢 the spindle box: put the right number of spindles in the box; zero means nothing
@@ -323,24 +328,24 @@ const Spindle={ start(){ stage.className='room'; this.list=[1,2,0,3,5,4,0,7,6,9]
   this.box=h('div',{class:'sbox'},`<b class="lb" style="color:${n?TXT(n):'#1a1a2e'}">${NUM(n)}</b><div class="in"></div>`,stage); const bw=Math.min(W*.36,340); this.box.style.width=bw+'px'; place(this.box,W*.94-bw,H*.2);
   this.pile=h('div',{class:'pile'},'<i class="spin"></i>'.repeat(10),stage); this.pile.style.width=Math.min(W*.4,360)+'px'; place(this.pile,W*.05,H*.22);
   this.q=n===0?'الصفر: كم مغزلًا نضع؟':n===1?'ضع مغزلًا واحدًا في الصندوق':n===2?'ضع مغزلين في الصندوق':`ضع ${NNAME[n]} مغازل في الصندوق`;
-  setGoal(`<span>${n?'ضع في الصندوق':'الصفر'}</span><b style="font-size:1.4em">${NUM(n)}</b>${R.steps()}`); tip(n?'اضغط على المغزل لتضعه في الصندوق ✋':'الصفر يعني لا شيء… هل نضع شيئًا؟ 🤔'); Speech.say(this.q);
+  setGoal(`<span>${n?'ضع في الصندوق':'الصفر'}</span><b style="font-size:1.4em">${NUM(n)}</b>${lvChip(R)}${R.steps()}`); tip(n?'اضغط على المغزل لتضعه في الصندوق ✋':'الصفر يعني لا شيء… هل نضع شيئًا؟ 🤔'); Speech.say(this.q);
   opts([{v:'out',label:'أخرج مغزلًا',em:'➖',color:'#78909c'},{v:'ok',label:'انتهيت',em:'✅',color:'#2e9d3a'}],v=>this.act(v));
   if(aidOf('spindle')===0) T.set(()=>{ if(R.busy) return; if(n){ const s=this.pile.querySelector('.spin'); if(s) s.classList.add('hint'); } else { const b=optBtn('ok'); if(b) b.classList.add('hint'); } },3000); },
  count(){ return this.box.querySelectorAll('.spin').length; },
- tap(x,y,t){ const s=t&&t.closest('.pile .spin'); if(!s||this.R.busy) return; if(this.count()>=10) return; s.classList.remove('hint'); this.box.querySelector('.in').appendChild(s); const c=this.count(); Snd.play('place'); Speech.say(NNAME[c],1); tip('');
+ tap(x,y,t){ const s=t&&t.closest('.pile .spin'); if(!s||this.R.busy||this.fix) return; if(this.count()>=10) return; s.classList.remove('hint'); this.box.querySelector('.in').appendChild(s); const c=this.count(); Snd.play('place'); Speech.say(NNAME[c],1); tip('');
   if(aidOf('spindle')===0&&c<this.n) T.set(()=>{ const z=this.pile.querySelector('.spin'); if(z&&!this.R.busy) z.classList.add('hint'); },1400); },
- act(v){ const R=this.R,n=this.n; if(R.busy) return; const c=this.count();
+ act(v){ const R=this.R,n=this.n; if(R.busy||this.fix) return; const c=this.count();
   if(v==='out'){ if(!c) return; const s=this.box.querySelector('.in .spin:last-child'); this.pile.appendChild(s); Snd.play('whoosh'); Speech.say(NNAME[c-1],1); return; }
   if(c===n){ closeOpts(); if(n>=2){ this.box.classList.add('tied'); Snd.play('pop'); tip('نربط المغازل معًا 🎀'); } else if(n===0) tip('أحسنت! الصفر = لا شيء، الصندوق فارغ'); R.win(n?NNAME[n]:'صفر',n?TXT(n):'#607d8b',1600,[String(n),NUM(n)]); return; }
-  R.miss(n===0?'الصفر يعني لا شيء! أخرج المغازل كلها ➖':c<n?`في الصندوق ${NUM(c)}، نحتاج ${NUM(n)}. أضف مغزلًا ✋`:`في الصندوق ${NUM(c)}، هذا أكثر من ${NUM(n)}. أخرج مغزلًا ➖`); },
+  R.miss(n===0?'الصفر يعني لا شيء! أخرج المغازل كلها ➖':c<n?`في الصندوق ${NUM(c)}، نحتاج ${NUM(n)}. أضف مغزلًا ✋`:`في الصندوق ${NUM(c)}، هذا أكثر من ${NUM(n)}. أخرج مغزلًا ➖`); countWith(this,[...this.box.querySelectorAll('.spin')],()=>{ const b=optBtn('out'); if(c>n&&b) b.classList.add('hint'); else { const s=this.pile.querySelector('.spin'); if(s) s.classList.add('hint'); } }); },
  again(){ Speech.say(this.q); } };
 
 // 🔴 cards and counters: put the counters in pairs — does every counter have a friend? (even / odd)
 const Odd={ start(){ stage.className='yard'; this.list=[1,2,3,4].concat(shuffle([5,6,7,8,9,10])); this.R=run('odd',10,'خبير الزوجي والفردي! 👫',R=>this.round(R)); this.R.go(); },
- round(R){ const H=innerHeight,n=this.n=this.list[R.i]; this.k=0; stage.innerHTML='';
+ round(R){ const H=innerHeight,n=this.n=this.list[R.i]; this.k=0; this.fix=false; stage.innerHTML='';
   const c=h('div',{class:'big13'},NUM(n),stage); c.style.top=(H*.13)+'px'; c.style.color=TXT(n);
   this.pp=h('div',{class:'pairs'},'',stage); this.pp.style.top=(H*.13+Math.min(125,H*.19))+'px';
-  this.q=`ضع ${NNAME[n]} من العدادات تحت الرقم`; setGoal(`<span>ضع العدادات</span><b style="font-size:1.4em;color:${TXT(n)}">${NUM(n)}</b>${R.steps()}`); tip('العدادات تجلس اثنين اثنين 👫'); Speech.say(this.q);
+  this.q=`ضع ${NNAME[n]} من العدادات تحت الرقم`; setGoal(`<span>ضع العدادات</span><b style="font-size:1.4em;color:${TXT(n)}">${NUM(n)}</b>${lvChip(R)}${R.steps()}`); tip('العدادات تجلس اثنين اثنين 👫'); Speech.say(this.q);
   opts([{v:'add',label:'ضع عدادًا',em:'🔴',color:'#d32f2f'}],v=>this.add());
   if(aidOf('odd')===0) T.set(()=>{ const b=optBtn('add'); if(b&&!R.busy&&!this.k) b.classList.add('hint'); },2600); },
  add(){ if(this.R.busy||this.k>=this.n) return; this.k++; const k=this.k; let row=this.pp.lastElementChild; if(!row||row.children.length===2) row=h('div',{class:'pr2'},'',this.pp);
@@ -350,9 +355,9 @@ const Odd={ start(){ stage.className='yard'; this.list=[1,2,3,4].concat(shuffle(
   this.q='هل لكل عداد صديق؟ زوجي أم فردي؟'; Speech.say(this.q); tip(n%2?'انظر إلى آخر عداد… هل معه صديق؟':'انظر: كل عداد معه صديق؟');
   opts([{v:'even',label:'زوجي',em:'👫',color:'#2e9d3a'},{v:'odd',label:'فردي',em:'🧍',color:'#ff8a3d'}],(v,b)=>this.pick(v,b));
   if(aidOf('odd')===0&&this.R.i<4) T.set(()=>{ const b=optBtn(n%2?'odd':'even'); if(b&&!this.R.busy) b.classList.add('hint'); },3000); },
- pick(v,b){ const R=this.R,n=this.n,ans=n%2?'odd':'even'; if(R.busy) return;
+ pick(v,b){ const R=this.R,n=this.n,ans=n%2?'odd':'even'; if(R.busy||this.fix) return;
   if(v===ans){ closeOpts(); tip(`${NUM(n)} ${ans==='even'?'زوجي: كل عداد معه صديق 👫':'فردي: بقي عداد وحده 🧍'}`); R.win(ans==='even'?'زوجي':'فردي',ans==='even'?'#2e9d3a':'#ff8a3d',2000); return; }
-  shake(b); R.miss(ans==='even'?'كل عداد معه صديق 👫 إذن زوجي':'عداد بقي وحده بدون صديق 🧍 إذن فردي'); optBtn(ans).classList.add('hint'); },
+  shake(b); R.miss(ans==='even'?'كل عداد معه صديق 👫 إذن زوجي':'عداد بقي وحده بدون صديق 🧍 إذن فردي'); countWith(this,[...this.pp.children],()=>{ const k=optBtn(ans); if(k) k.classList.add('hint'); }); },
  again(){ Speech.say(this.q); } };
 
 const ACTS=[

@@ -280,6 +280,11 @@ function beads(n,size,vertical){ const c=n===10?'#ffb300':MONT[n]; const b=`<i s
 // teen numbers: the golden ten bar plus the extra beads
 const teen=(n,size)=>n<=10?beads(n,size):`<span style="display:inline-flex;gap:6px;align-items:center">${beads(10,size)}${beads(n-10,size)}</span>`;
 const sayNum=n=>Speech.say(NNAME[n],.8);
+// every activity climbs four steps, shown as a small tag beside the question
+const lvChip=R=>{ const L=[['سهل جدًا','#2e9d3a'],['سهل','#1e88e5'],['متوسط','#ff8a3d'],['تحدٍّ','#8e24aa']][Math.min(3,Math.floor(R.i/R.total*4))]; return `<span class="tag" style="background:${L[1]}">${L[0]}</span>`; };
+// the error corrector: stop the game for a moment and count the things with the child, one by one
+css(`.cnthit{outline:4px solid #ffb300;outline-offset:2px;scale:1.25;transition:scale .15s}`);
+function countWith(G,els,done,from){ G.fix=true; els.forEach((e,k)=>T.set(()=>{ e.classList.add('cnthit'); Snd.play('pop'); Speech.say(NNAME[(from||0)+k+1],1.1); },k*650)); T.set(()=>{ els.forEach(e=>e.classList.remove('cnthit')); G.fix=false; if(done) done(); },els.length*650+350); }
 
 /* ---------- الترتيب: تصاعديًا وتنازليًا ---------- */
 const META={prefix:'math11_',title:'الترتيب',eyebrow:'الرياضيات · ترتيب الأعداد تصاعديًا وتنازليًا (١–٢٠)',lead:'نبني الدرج السحري من عصيّ الخرز من الأقصر إلى الأطول، ونطلق الصاروخ بالعدّ التنازلي، ونساعد الضفدع على إيجاد الرقم الناقص.'};
@@ -298,41 +303,43 @@ const Stair={ start(){ stage.className='yard'; this.R=run('stair',10,'الدرج
   this.slots=[]; for(let n=1;n<=10;n++){ const e=h('div',{class:'stairslot'},'',stage); const hgt=n*(bs+2)+44; e.style.cssText+=`left:${W*.92-n*sw}px;top:${base-hgt}px;width:${sw-8}px;height:${hgt}px`; this.slots.push(e); }
   // the shuffled bars stand at the bottom-left, bottoms aligned
   const order=shuffle([1,2,3,4,5,6,7,8,9,10]), gap=Math.min(W*.034,40); this.bars=order.map((n,i)=>{ const e=h('div',{class:'vbar','data-n':n},`${beads(n,bs,true)}<b>${NUM(n)}</b>`,stage); place(e,W*.03+i*gap,0); e.style.top=(H*.97-e.offsetHeight)+'px'; return draggable(e,(x,y)=>this.drop(e,x,y)); }); },
- round(R){ const n=this.need=R.i+1; this.slots.forEach((s,i)=>s.style.borderColor=i===n-1?'#ffb300':''); this.q=n===1?'ابدأ بالأقصر: العصا رقم ١':`بعد ${NUM(n-1)} يأتي…`; setGoal(`<span>${n===1?'أقصر عصا؟':'بعد '+NUM(n-1)+'؟'}</span>${R.steps()}`); tip('اسحب العصا إلى الدرج ✋'); Speech.say(n===1?'ابدأ بالأقصر، الواحد':'بعد '+NNAME[n-1]);
+ round(R){ const n=this.need=R.i+1, span=R.i<3?1:R.i<6?2:9; this.fix=false; this.bars.forEach(e=>{ const m=+e.dataset.n; if(m>=n) e.style.visibility=m<=n+span?'':'hidden'; }); this.slots.forEach((s,i)=>s.style.borderColor=i===n-1?'#ffb300':''); this.q=n===1?'ابدأ بالأقصر: العصا رقم ١':`بعد ${NUM(n-1)} يأتي…`; setGoal(`<span>${n===1?'أقصر عصا؟':'بعد '+NUM(n-1)+'؟'}</span>${lvChip(R)}${R.steps()}`); tip('اسحب العصا إلى الدرج ✋'); Speech.say(n===1?'ابدأ بالأقصر، الواحد':'بعد '+NNAME[n-1]);
   if(aidOf('stair')===0) T.set(()=>{ const e=$(`.vbar[data-n="${n}"]`); if(e&&!R.busy) e.classList.add('glow'); },2600); },
- drop(e,x,y){ const R=this.R,n=+e.dataset.n,s=this.slots[this.need-1]; if(!this.slots.some(z=>hit(x,y,z,10))) return false;
+ drop(e,x,y){ const R=this.R,n=+e.dataset.n,s=this.slots[this.need-1]; if(this.fix||!this.slots.some(z=>hit(x,y,z,10))) return false;
   if(n===this.need){ const r=s.getBoundingClientRect(); place(e,r.left+4,r.bottom-e.offsetHeight); e.classList.remove('drag','glow'); Snd.play('place');
    if(n===10) T.set(()=>this.climb(),700); R.win(NNAME[n],TXT(n),n===10?3200:900,[String(n),NUM(n)]); return true; }
-  R.miss(n<this.need?`${NUM(n)} وضعناها قبل. نريد ${NUM(this.need)}`:`ليس بعد! بعد ${NUM(this.need-1)} يأتي ${NUM(this.need)}`); const g=$(`.vbar[data-n="${this.need}"]`); if(g) g.classList.add('glow'); return false; },
+  R.miss(n<this.need?`${NUM(n)} وضعناها قبل. نريد ${NUM(this.need)}`:`ليس بعد! بعد ${NUM(this.need-1)} يأتي ${NUM(this.need)}`); const g=$(`.vbar[data-n="${this.need}"]`); if(g){ countWith(this,[...g.querySelectorAll('.bbar i')],()=>g.classList.add('glow')); } return false; },
  climb(){ const hero=obj('🦸',innerWidth*.92-60,this.base-60,56,''); hero.style.transition='left .25s,top .25s'; for(let n=1;n<=10;n++) T.set(()=>{ const r=this.slots[n-1].getBoundingClientRect(); place(hero,r.left,r.top-58); Snd.play('pop'); },n*260); },
  again(){ Speech.say(this.q); } };
 
 // 🚀 countdown: tap from 10 down to 1 (then 20 down to 11) and the rocket takes off
-const Rocket={ start(){ stage.className='space'; this.R=run('rocket',2,'انطلق الصاروخ! 🚀',R=>this.round(R)); this.R.go(); },
- round(R){ const W=innerWidth,H=innerHeight,top=R.i===0?10:20; this.seq=Array.from({length:10},(_,i)=>top-i); this.k=0; stage.innerHTML='';
+const Rocket={ start(){ stage.className='space'; this.R=run('rocket',3,'انطلق الصاروخ! 🚀',R=>this.round(R)); this.R.go(); },
+ round(R){ const W=innerWidth,H=innerHeight,top=[5,10,20][R.i]; this.seq=Array.from({length:top===5?5:10},(_,i)=>top-i); this.k=0; stage.innerHTML='';
   this.rk=obj('🚀',W*.08,H*.42,null,'rocket'); this.cnt=h('div',{class:'count'},'',stage); this.cnt.style.top='84px';
   const pos=shuffle(this.seq.slice()); pos.forEach((n,i)=>{ const b=h('div',{class:'nbtn','data-n':n},`<span style="color:${TXT(n>10?n-10:n)}">${NUM(n)}</span>`,stage); place(b,W*.34+(i%5)*Math.min(W*.12,120),H*.38+((i/5)|0)*Math.min(H*.2,120)); });
-  this.q=`العدّ التنازلي من ${NNAME[top]}: اضغط الأرقام من الأكبر إلى الأصغر`; setGoal(`<span>العدّ التنازلي: ${NUM(top)} ← ${NUM(top-9)}</span>${R.steps()}`); tip(`ابدأ من ${NUM(top)} 🚀`); Speech.say(this.q);
-  if(aidOf('rocket')===0) T.set(()=>this.hintNext(),2600); },
+  this.q=`العدّ التنازلي من ${NNAME[top]}: اضغط الأرقام من الأكبر إلى الأصغر`; setGoal(`<span>العدّ التنازلي: ${NUM(top)} ← ${NUM(this.seq[this.seq.length-1])}</span>${lvChip(R)}${R.steps()}`); tip(`ابدأ من ${NUM(top)} 🚀`); Speech.say(this.q);
+  if(aidOf('rocket')===0||R.i===0) T.set(()=>this.hintNext(),2600); },
  hintNext(){ const b=$(`.nbtn[data-n="${this.seq[this.k]}"]`); if(b) b.classList.add('hint'); },
  tap(x,y,t){ const b=t&&t.closest('.nbtn'); if(!b||this.R.busy) return; const n=+b.dataset.n, want=this.seq[this.k];
   if(n===want){ b.classList.remove('hint'); b.classList.add('done'); this.cnt.textContent=NUM(n); Snd.play('place'); Speech.say(NNAME[n],1); this.k++; tip('');
-   if(this.k===this.seq.length){ if(this.R.tries<=1) this.R.tries=0; T.set(()=>{ Snd.play('whoosh'); this.rk.classList.add('go'); this.cnt.textContent='🔥'; },500); this.R.win('انطلق!','#ff7a1a',2600); } else if(aidOf('rocket')===0) T.set(()=>this.hintNext(),2200); }
+   if(this.k===this.seq.length){ if(this.R.tries<=1) this.R.tries=0; T.set(()=>{ Snd.play('whoosh'); this.rk.classList.add('go'); this.cnt.textContent='🔥'; },500); this.R.win('انطلق!','#ff7a1a',2600); } else if(aidOf('rocket')===0||this.R.i===0) T.set(()=>this.hintNext(),2200); }
   else { b.classList.remove('no'); void b.offsetWidth; b.classList.add('no'); this.R.miss(`بعد ${NUM(this.k?this.seq[this.k-1]:want+1)} يأتي ${NUM(want)} 🔽`); this.hintNext(); } },
  again(){ Speech.say(this.q); } };
 
 // 🐸 the missing number: the frog crosses the stones
 const Frog={ start(){ stage.className='pond'; this.R=run('frog',10,'الضفدع عبر النهر! 🐸',R=>this.round(R)); this.R.go(); },
- round(R){ const W=innerWidth,H=innerHeight,i=R.i, down=i>=7, hi=i>=4&&i<7; const len=5, start=down?(hi?20:pick([10,15,20])):(hi?11+((rnd()*11)|0):1+((rnd()*6)|0));
+ round(R){ const W=innerWidth,H=innerHeight,i=R.i, down=i>=7, hi=i>=4&&i<7; this.fix=false; const len=5, start=down?(hi?20:pick([10,15,20])):(hi?11+((rnd()*11)|0):i<2?1:1+((rnd()*6)|0));
   let seq=Array.from({length:len},(_,k)=>down?start-k:start+k); if(!down&&seq[len-1]>20) seq=seq.map(v=>v-(seq[len-1]-20)); if(down&&seq[len-1]<1) seq=seq.map(v=>v+(1-seq[len-1]));
   const gi=1+((rnd()*(len-2))|0); this.seq=seq; this.gi=gi; this.ans=seq[gi]; stage.innerHTML=''; const ss=Math.min(W/8,110);
   this.stones=seq.map((v,k)=>{ const e=h('div',{class:'stone'+(k===gi?' gap':'')},k===gi?'؟':NUM(v),stage); e.style.cssText+=`width:${ss}px;height:${ss*.7}px;font-size:${ss*.42}px;left:${W*.88-(k+1)*(W*.76/len)}px;top:${H*.55}px`; return e; });
   const f0=this.stones[0].getBoundingClientRect(); this.frog=obj('🐸',f0.left+ss*.1,f0.top-ss*.75,null,'frog');
-  this.q=down?'الأرقام تنزل: ما الرقم الناقص؟':'ما الرقم الناقص؟'; setGoal(`<span>${this.q}</span><span class="tag" style="background:${down?'#8e24aa':'#2e9d3a'}">${down?'تنازلي':'تصاعدي'}</span>${R.steps()}`); tip(''); Speech.say(this.q);
-  const near=[-3,-2,-1,1,2,3].map(d=>this.ans+d).filter(m=>m>=1&&m<=20), set=new Set([this.ans].concat(shuffle(near).slice(0,2)));
+  this.q=down?'الأرقام تنزل: ما الرقم الناقص؟':'ما الرقم الناقص؟'; setGoal(`<span>${this.q}</span><span class="tag" style="background:${down?'#8e24aa':'#2e9d3a'}">${down?'تنازلي':'تصاعدي'}</span>${lvChip(R)}${R.steps()}`); tip(''); Speech.say(this.q);
+  const near=(i<3?[-4,-3,3,4]:[-3,-2,-1,1,2,3]).map(d=>this.ans+d).filter(m=>m>=1&&m<=20), set=new Set([this.ans].concat(shuffle(near).slice(0,i<3?1:2)));
   opts(shuffle([...set]).map(v=>({v,label:NUM(v),color:'#1e78b4'})),(v,b)=>this.pick(v,b)); if(aidOf('frog')===0&&R.i<3) T.set(()=>{ const b=optBtn(this.ans); if(b&&!R.busy) b.classList.add('hint'); },3200); },
- pick(v,b){ const R=this.R; if(R.busy) return; if(v===this.ans){ closeOpts(); const g=this.stones[this.gi]; g.classList.remove('gap'); g.textContent=NUM(v); this.hop(); R.win(NNAME[v],'#2e9d3a',2600,[String(v),NUM(v)]); return; }
-  shake(b); const a=this.seq[this.gi-1]; R.miss(`بعد ${NUM(a)} يأتي ${NUM(this.ans)}`); optBtn(this.ans).classList.add('hint'); },
+ pick(v,b){ const R=this.R; if(R.busy||this.fix) return; if(v===this.ans){ closeOpts(); const g=this.stones[this.gi]; g.classList.remove('gap'); g.textContent=NUM(v); this.hop(); R.win(NNAME[v],'#2e9d3a',2600,[String(v),NUM(v)]); return; }
+  // the corrector: the frog walks the stones while we say each number, and stops at the gap
+  shake(b); const a=this.seq[this.gi-1]; R.miss('لنعدّ مع الضفدع 🐸'); this.fix=true; for(let k=0;k<this.gi;k++) T.set(()=>{ const r=this.stones[k].getBoundingClientRect(); place(this.frog,r.left+r.width*.1,r.top-r.height*1.05); Snd.play('boing'); Speech.say(NNAME[this.seq[k]],1); },700+k*800);
+  T.set(()=>{ this.fix=false; tip(`بعد ${NUM(a)} يأتي ${NUM(this.ans)} 👆`,true); Speech.say('بعد '+NNAME[a]+' يأتي '+NNAME[this.ans]); const k=optBtn(this.ans); if(k) k.classList.add('hint'); },700+this.gi*800+300); },
  hop(){ this.stones.forEach((s,k)=>T.set(()=>{ const r=s.getBoundingClientRect(); place(this.frog,r.left+r.width*.1,r.top-r.height*1.05); Snd.play('boing'); },k*420)); },
  again(){ Speech.say(this.q); } };
 

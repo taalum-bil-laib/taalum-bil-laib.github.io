@@ -280,6 +280,11 @@ function beads(n,size,vertical){ const c=n===10?'#ffb300':MONT[n]; const b=`<i s
 // teen numbers: the golden ten bar plus the extra beads
 const teen=(n,size)=>n<=10?beads(n,size):`<span style="display:inline-flex;gap:6px;align-items:center">${beads(10,size)}${beads(n-10,size)}</span>`;
 const sayNum=n=>Speech.say(NNAME[n],.8);
+// every activity climbs four steps, shown as a small tag beside the question
+const lvChip=R=>{ const L=[['سهل جدًا','#2e9d3a'],['سهل','#1e88e5'],['متوسط','#ff8a3d'],['تحدٍّ','#8e24aa']][Math.min(3,Math.floor(R.i/R.total*4))]; return `<span class="tag" style="background:${L[1]}">${L[0]}</span>`; };
+// the error corrector: stop the game for a moment and count the things with the child, one by one
+css(`.cnthit{outline:4px solid #ffb300;outline-offset:2px;scale:1.25;transition:scale .15s}`);
+function countWith(G,els,done,from){ G.fix=true; els.forEach((e,k)=>T.set(()=>{ e.classList.add('cnthit'); Snd.play('pop'); Speech.say(NNAME[(from||0)+k+1],1.1); },k*650)); T.set(()=>{ els.forEach(e=>e.classList.remove('cnthit')); G.fix=false; if(done) done(); },els.length*650+350); }
 
 /* ---------- المقارنة: أكبر وأصغر ويساوي ---------- */
 const META={prefix:'math12_',title:'المقارنة',eyebrow:'الرياضيات · المقارنة بين الأعداد (١–٢٠)',lead:'التمساح الجائع يفتح فمه دائمًا نحو العدد الأكبر، والميزان ينزل بالعدد الأكبر ويتوازن مع المتساويين، وسباق الأبراج: أيها فيه مكعبات أكثر؟'};
@@ -302,7 +307,8 @@ css(`.ncard{position:absolute;display:flex;flex-direction:column;align-items:cen
 .tower .lbl2{font-family:var(--display);font-size:46px;line-height:1;color:#1a1a2e;background:#fff;border-radius:12px;padding:2px 10px;margin-top:6px}`);
 const WD={big:'أكبر',small:'أصغر'}, CL={big:'#e53935',small:'#1e6fd9'};
 // pairs: first within 1–10, then 11–20
-function pair(i,eq){ const hi=i>=6, lo=hi?11:1, top=hi?20:10; const a=lo+((rnd()*(top-lo+1))|0); if(eq) return [a,a]; let b; do{ b=lo+((rnd()*(top-lo+1))|0); }while(b===a); return [a,b]; }
+// the first numbers are small and far apart, so the bigger one is plain to see; they get closer step by step
+function pair(i,eq){ const hi=i>=7, lo=hi?11:1, top=hi?20:i<3?5:10, gap=i<3?3:i<5?2:1; const a=lo+((rnd()*(top-lo+1))|0); if(eq) return [a,a]; let b; do{ b=lo+((rnd()*(top-lo+1))|0); }while(Math.abs(b-a)<gap); return [a,b]; }
 const card=(n,show)=>`<span class="nn" style="color:${TXT(n>10?n-10:n)}">${NUM(n)}</span>${show?teen(n,Math.min(18,innerWidth/50)):''}`;
 
 // the crocodile drawing (mouth to the right): mouth insides behind, then the lower jaw, then the head with the eye
@@ -332,38 +338,40 @@ function pondScene(){ const wv=y=>`<svg class="waves" style="top:calc(`+y+`% - 1
   <div class="lily" style="left:16%;top:78%"><i>🌸</i></div><div class="lily" style="right:20%;top:84%"></div><div class="lily" style="left:44%;top:90%;width:80px"><i>🌼</i></div></div>`; }
 // 🐊 the hungry crocodile always opens its mouth toward the bigger number
 const Croc={ start(){ stage.className='pond'; this.seq=seq2('big','small',10); this.R=run('croc',10,'تمساح شبعان! 🐊',R=>this.round(R)); this.R.go(); },
- round(R){ const W=innerWidth,H=innerHeight,k=this.k=this.seq[R.i],[a,b]=this.p=pair(R.i); stage.innerHTML=''; const aid=aidOf('croc')<2; stage.innerHTML=pondScene();
+ round(R){ const W=innerWidth,H=innerHeight,k=this.k=this.seq[R.i],[a,b]=this.p=pair(R.i); stage.innerHTML=''; this.fix=false; const aid=true; stage.innerHTML=pondScene();
   this.c=[a,b].map((n,j)=>{ const e=h('div',{class:'ncard','data-n':n},card(n,aid),stage); place(e,j?W*.08:W*.66,H*.3); return e; });
   this.croc=h('div',{class:'croc'},CROC_SVG,stage); const cw=Math.min(W*.3,360); place(this.croc,W/2-cw/2,H*.34); this.face();
-  this.q=k==='big'?'أين العدد الأكبر؟':'أين العدد الأصغر؟'; setGoal(`<span>${this.q}</span><span class="tag" style="background:${CL[k]}">${WD[k]}</span>${R.steps()}`); tip('التمساح يفتح فمه نحو الأكبر 🐊'); Speech.say(this.q);
+  this.q=k==='big'?'أين العدد الأكبر؟':'أين العدد الأصغر؟'; setGoal(`<span>${this.q}</span><span class="tag" style="background:${CL[k]}">${WD[k]}</span>${lvChip(R)}${R.steps()}`); tip('التمساح يفتح فمه نحو الأكبر 🐊'); Speech.say(this.q);
   if(aidOf('croc')===0&&R.i<4) T.set(()=>{ const t=this.target(); const e=this.c.find(z=>+z.dataset.n===t); if(e&&!R.busy) e.classList.add('hint'); },2800); },
  target(){ const [a,b]=this.p; return this.k==='big'?Math.max(a,b):Math.min(a,b); },
  face(){ const [a,b]=this.p, bigRight=a>b; this.croc.style.transform=`scaleX(${bigRight?1:-1})`; }, // the drawing opens to the right; the right card holds the first number
- tap(x,y,t){ const e=t&&t.closest('.ncard'); if(!e||this.R.busy) return; const n=+e.dataset.n, want=this.target(), [a,b]=this.p, big=Math.max(a,b), sm=Math.min(a,b);
+ tap(x,y,t){ const e=t&&t.closest('.ncard'); if(!e||this.R.busy||this.fix) return; const n=+e.dataset.n, want=this.target(), [a,b]=this.p, big=Math.max(a,b), sm=Math.min(a,b);
   if(n===want){ e.classList.remove('hint'); this.croc.classList.add('eat'); Snd.play('thud'); const msg=`${NUM(big)} أكبر من ${NUM(sm)}`; tip(msg); Speech.say(`${NNAME[big]} أكبر من ${NNAME[sm]}`); this.R.win(WD[this.k],CL[this.k],2000); }
-  else { e.classList.remove('no'); void e.offsetWidth; e.classList.add('no'); this.R.miss(this.k==='big'?`${NUM(n)} أصغر من ${NUM(want)}. انظر إلى فم التمساح 🐊`:`${NUM(n)} أكبر من ${NUM(want)}. الأصغر هو الذي لا يأكله التمساح`); this.c.find(z=>+z.dataset.n===want).classList.add('hint'); } },
+  else { e.classList.remove('no'); void e.offsetWidth; e.classList.add('no'); this.R.miss(this.k==='big'?`${NUM(n)} أصغر من ${NUM(want)}. انظر إلى فم التمساح 🐊`:`${NUM(n)} أكبر من ${NUM(want)}. الأصغر هو الذي لا يأكله التمساح`); const c=this.c.find(z=>+z.dataset.n===want), bd=want<=10?[...c.querySelectorAll('.bbar i')]:[]; countWith(this,bd,()=>{ c.classList.add('hint'); tip(`اضغط ${NUM(want)} 👆`,true); }); } },
  again(){ Speech.say(this.q); } };
 
 // ⚖️ the number scale: the bigger number goes down; equal numbers balance
 const NScale={ start(){ stage.className='room'; this.eqs=new Set(shuffle([2,3,4,5,6,7,8,9]).slice(0,2)); this.R=run('nscale',10,'ميزان الأعداد! ⚖️',R=>this.round(R)); this.R.go(); },
  round(R){ const eq=this.eqs.has(R.i),[a,b]=this.p=pair(R.i,eq); stage.innerHTML=`<div class="ss"><div class="beam" id="beam"><div class="seat l"><div class="weight"><b>${NUM(b)}</b></div></div><div class="seat r"><div class="weight"><b>${NUM(a)}</b></div></div></div><div class="fulc"></div></div>`;
-  this.q='أيهما أكبر؟'; setGoal(`<span>أيهما أكبر؟</span>${R.steps()}`); tip('شاهد الميزان… ⚖️'); this.ready=false;
+  this.q='أيهما أكبر؟'; setGoal(`<span>أيهما أكبر؟</span>${lvChip(R)}${R.steps()}`); tip('شاهد الميزان… ⚖️'); this.ready=false;
   T.set(()=>{ Snd.play('whoosh'); $('#beam').style.transform=`rotate(${a===b?0:a>b?13:-13}deg)`; },700);
   T.set(()=>{ Snd.play('thud'); Speech.say(this.q); tip(a===b?'الميزان لم يتحرك…':'العدد الأكبر ينزل ⬇️'); opts([{v:a,label:NUM(a),color:'#e53935'},{v:'eq',label:'متساويان',em:'⚖️',color:'#2e9d3a'},{v:b,label:NUM(b),color:'#1e6fd9'}],(v,bt)=>this.pick(v,bt)); $('#opts').style.direction='rtl';
    if(aidOf('nscale')===0&&R.i<4) T.set(()=>{ const bt=optBtn(a===b?'eq':Math.max(a,b)); if(bt&&!R.busy) bt.classList.add('hint'); },2600); },1800); },
- pick(v,bt){ const R=this.R,[a,b]=this.p; if(R.busy) return; const ans=a===b?'eq':Math.max(a,b);
+ pick(v,bt){ const R=this.R,[a,b]=this.p; if(R.busy||this.fix) return; const ans=a===b?'eq':Math.max(a,b);
   if(String(v)===String(ans)){ closeOpts(); if(a===b){ tip(`${NUM(a)} يساوي ${NUM(b)}`); R.win('متساويان','#2e9d3a'); } else { tip(`${NUM(Math.max(a,b))} أكبر من ${NUM(Math.min(a,b))}`); R.win(NNAME[Math.max(a,b)],'#e53935',1500,[String(Math.max(a,b))]); } return; }
-  shake(bt); R.miss(a===b?'الميزان متوازن: العددان متساويان ⚖️':v==='eq'?'الميزان ليس متوازنًا! العدد الأكبر نزل ⬇️':`${NUM(v)} أصغر. العدد الأكبر هو الذي نزل ⬇️`); optBtn(ans).classList.add('hint'); },
+  shake(bt); R.miss(a===b?'الميزان متوازن: العددان متساويان ⚖️':v==='eq'?'الميزان ليس متوازنًا! العدد الأكبر نزل ⬇️':`${NUM(v)} أصغر. العدد الأكبر هو الذي نزل ⬇️`);
+  // watch the scale again, slowly, then light the right answer
+  this.fix=true; const bm=$('#beam'); bm.style.transform='rotate(0deg)'; T.set(()=>{ Snd.play('whoosh'); bm.style.transform=`rotate(${a===b?0:a>b?13:-13}deg)`; },1200); T.set(()=>{ this.fix=false; const k=optBtn(ans); if(k) k.classList.add('hint'); },2500); },
  again(){ Speech.say(this.q); } };
 
 // 🏗️ tower race: which tower has more (or fewer) cubes?
 const Towers={ start(){ stage.className='sky'; this.seq=seq2('big','small',10); this.R=run('towers',10,'بطل الأبراج! 🏗️',R=>this.round(R)); this.R.go(); },
- round(R){ const W=innerWidth,H=innerHeight,k=this.k=this.seq[R.i]; let a,b; do{ a=1+((rnd()*10)|0); b=1+((rnd()*10)|0); }while(Math.abs(a-b)<(aidOf('towers')===0?3:1)); this.p=[a,b]; stage.innerHTML='';
+ round(R){ const W=innerWidth,H=innerHeight,k=this.k=this.seq[R.i]; const top=R.i<3?6:10, gap=R.i<3?4:R.i<6?2:1; let a,b; do{ a=1+((rnd()*top)|0); b=1+((rnd()*top)|0); }while(Math.abs(a-b)<gap); this.p=[a,b]; this.fix=false; stage.innerHTML='';
   const cs=Math.min(34,(H*.5)/11); this.t=[a,b].map((n,j)=>{ const e=h('div',{class:'tower','data-n':n},Array.from({length:n},()=>`<i style="width:${cs*1.6}px;height:${cs}px;background:${MONT[n]}"></i>`).join(''),stage); place(e,j?W*.2:W*.62,0); e.style.top=(H*.86-e.offsetHeight)+'px'; return e; });
-  this.q=k==='big'?'أي برج فيه مكعبات أكثر؟':'أي برج فيه مكعبات أقل؟'; setGoal(`<span>${this.q}</span><span class="tag" style="background:${CL[k]}">${k==='big'?'أكثر':'أقل'}</span>${R.steps()}`); tip('اضغط على البرج 🏗️'); Speech.say(this.q); },
- tap(x,y,t){ const e=t&&t.closest('.tower'); if(!e||this.R.busy) return; const [a,b]=this.p, want=this.k==='big'?Math.max(a,b):Math.min(a,b), n=+e.dataset.n;
+  this.q=k==='big'?'أي برج فيه مكعبات أكثر؟':'أي برج فيه مكعبات أقل؟'; setGoal(`<span>${this.q}</span><span class="tag" style="background:${CL[k]}">${k==='big'?'أكثر':'أقل'}</span>${lvChip(R)}${R.steps()}`); tip('اضغط على البرج 🏗️'); Speech.say(this.q); },
+ tap(x,y,t){ const e=t&&t.closest('.tower'); if(!e||this.R.busy||this.fix) return; const [a,b]=this.p, want=this.k==='big'?Math.max(a,b):Math.min(a,b), n=+e.dataset.n;
   if(n===want){ this.t.forEach(z=>z.insertAdjacentHTML('beforeend',`<span class="lbl2">${NUM(+z.dataset.n)}</span>`)); Snd.play('place'); this.R.win(this.k==='big'?'أكثر':'أقل',CL[this.k],2000); }
-  else { e.classList.remove('no'); void e.offsetWidth; e.classList.add('no'); this.R.miss(this.k==='big'?'هذا البرج أقصر، فيه مكعبات أقل. اعدد المكعبات 🙂':'هذا البرج أطول، فيه مكعبات أكثر.'); this.t.find(z=>+z.dataset.n===want).classList.add('hint'); } },
+  else { e.classList.remove('no'); void e.offsetWidth; e.classList.add('no'); this.R.miss(this.k==='big'?'هذا البرج أقصر، فيه مكعبات أقل. اعدد المكعبات 🙂':'هذا البرج أطول، فيه مكعبات أكثر.'); const g=this.t.find(z=>+z.dataset.n===want); countWith(this,[...e.querySelectorAll('i')],()=>countWith(this,[...g.querySelectorAll('i')],()=>{ g.classList.add('hint'); tip(`هذا البرج فيه ${NUM(want)} 👆`,true); })); } },
  again(){ Speech.say(this.q); } };
 
 const ACTS=[
