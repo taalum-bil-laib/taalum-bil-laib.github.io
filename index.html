@@ -9,7 +9,7 @@
 <title>منصة التعلم باللعب</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;700;800&family=Lalezar&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;700;800&family=Lalezar&display=swap" media="print" onload="this.media='all'">
 <style>
 :root{
   /* Layout: one centred column of glass cards on the night background shared by all four games. */
@@ -109,6 +109,12 @@ td b{font-size:17px}
 #gameWrap iframe{width:100%;height:100%;border:0;display:block}
 #gameClose{position:fixed;z-index:51;bottom:calc(12px + env(safe-area-inset-bottom,0px));left:12px;font-size:14px;opacity:.85}
 .update{position:fixed;z-index:60;top:calc(10px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:center;padding:10px 16px;border-radius:18px;background:#1d7a50;color:#fff;font-weight:800;box-shadow:0 10px 30px rgba(0,0,0,.4);max-width:calc(100% - 32px)}
+/* Way out of a stuck game: a faint tab on the left edge (answers sit bottom-centre, so it is kept away from them) that the teacher holds for a second; a child's quick tap does nothing. */
+#gameHold{position:fixed;z-index:55;top:50%;left:0;width:30px;height:64px;margin-top:-32px;padding:0;border-radius:0 14px 14px 0;border:1px solid rgba(255,255,255,.35);border-left:0;background:rgba(10,16,48,.45);font-size:15px;line-height:1;opacity:.4;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+#gameHold.on{opacity:1;background:var(--gold);transition:background 1s linear}
+#gameStuck{z-index:80}
+#gameStuck .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.slow{text-align:center}
 .confirm{position:fixed;inset:0;z-index:70;background:rgba(5,8,25,.7);display:grid;place-items:center;padding:16px}
 .confirm .panel{width:min(440px,100%);display:flex;flex-direction:column;gap:14px;text-align:center}
 .spin{width:44px;height:44px;border-radius:50%;border:5px solid rgba(255,255,255,.15);border-top-color:var(--gold);animation:sp 1s linear infinite;margin:30px auto}
@@ -124,7 +130,7 @@ td b{font-size:17px}
   </header>
   <p class="byline">إعداد المعلم: <b>أحمد حازم عبد الله</b> · تحت إشراف: <b>د. خالد محروس بكري</b></p>
 
-  <div id="vLoading"><div class="spin" role="status" aria-label="جارٍ التحميل"></div></div>
+  <div id="vLoading"><div class="spin" role="status" aria-label="جارٍ التحميل"></div><div class="panel slow" id="slowBox" hidden><p>التحميل تأخر، وقد يكون الإنترنت ضعيفًا الآن.</p><p style="margin-top:12px"><button class="btn primary" onclick="location.reload()">🔄 حاول مرة أخرى</button></p></div></div>
 
   <!-- sign in / sign up -->
   <section id="vAuth" hidden>
@@ -171,7 +177,7 @@ td b{font-size:17px}
     </div>
     <div class="panel">
       <div class="tbl-wrap"><table>
-        <thead><tr><th>الطالب</th><th>رمز الدعوة لولي الأمر</th><th>مغامرات الحروف</th><th>أين يسكن الحرف</th><th>أبطال الحركات</th><th>فتحة يقرأ</th><th>القراءة بالحركات</th><th>مسرح الفهم</th><th>الألوان</th><th>الأشكال</th><th>طويل وقصير</th><th>كبير وصغير</th><th>الأرقام</th><th>مفاهيم: أوزان ومسافات واتجاهات وتصنيف وزمن</th><th>الأعداد ١–٢٠: كتابة وترتيب ومقارنة ومكونات وجمع</th><th>الأوسمة</th><th></th></tr></thead>
+        <thead><tr><th>الطالب</th><th>رمز الدعوة لولي الأمر</th><th>مغامرات الحروف</th><th>أين يسكن الحرف</th><th>أبطال الحركات</th><th>فتحة يقرأ</th><th>القراءة بالحركات</th><th>مسرح الفهم</th><th>الألوان</th><th>الأشكال</th><th>طويل وقصير</th><th>كبير وصغير</th><th>الأرقام</th><th>مفاهيم: أوزان ومسافات واتجاهات وتصنيف وزمن</th><th>الأعداد ١–٢٠: كتابة وترتيب ومقارنة ومكونات وجمع وطرح</th><th>الأوسمة</th><th></th></tr></thead>
         <tbody id="tBody"></tbody>
       </table></div>
       <p class="note" id="teacherEmpty" hidden>أضف طلابك ليظهروا هنا. لكل طالب رمز دعوة ترسله لولي أمره ليتابع تقدّمه من البيت.</p>
@@ -194,7 +200,7 @@ td b{font-size:17px}
 
   <!-- the games hub for the chosen student -->
   <section id="vHub" hidden>
-    <div class="panel player"><div class="av" id="pAv">🦁</div><div><b id="pName"></b><div class="sync" id="syncState"></div></div><span style="flex:1"></span><button class="btn sm" id="btnSwitch">تغيير الطالب</button></div>
+    <div class="panel player"><div class="av" id="pAv">🦁</div><div><b id="pName"></b><div class="sync" id="syncState"></div></div><span style="flex:1"></span><button class="btn sm" id="btnLite" title="للأجهزة القديمة: ألعاب المجسمات تعمل أخف من البداية على هذا الجهاز فقط"></button><button class="btn sm" id="btnSwitch">تغيير الطالب</button></div>
     <div class="sects" role="tablist"><button class="sectbtn" role="tab" data-sect="ar" style="--a:#e3262f;--b:#7a1fd6"><span>📚</span><b>اللغة العربية</b><small>الحروف والحركات والقراءة والفهم</small></button><button class="sectbtn" role="tab" data-sect="ma" style="--a:#1e88e5;--b:#0f9d8a"><span>🔢</span><b>الرياضيات</b><small>الألوان والأشكال والمفاهيم والأرقام</small></button></div>
     <div class="games" id="g-ar">
       <button class="game" data-game="huroof" style="--a:#3f98ea;--b:#2f6b2a"><span class="ic">🦁</span><h3>مغامرات الحروف</h3><p>من الألف إلى الياء في ٢٨ عالمًا.</p><span class="pr" data-pr="huroof"></span></button>
@@ -226,13 +232,15 @@ td b{font-size:17px}
       <button class="game" data-game="math13" style="--a:#e53935;--b:#1e6fd9"><span class="ic">📏</span><h3>مونتسوري الأعداد</h3><p>قضبان الأعداد، وصندوق المغازل والصفر، والزوجي والفردي.</p><span class="pr" data-pr="math13"></span></button>
       <button class="game" data-game="math14" style="--a:#ef5350;--b:#ffb300"><span class="ic">🏠</span><h3>بيت الأعداد</h3><p>مكونات العدد: وزّع الشبابيك يمينًا ويسارًا، والشبابيك الناقصة، والبيت كله.</p><span class="pr" data-pr="math14"></span></button>
       <button class="game" data-game="math15" style="--a:#e53935;--b:#2e9d3a"><span class="ic">🧺</span><h3>سلة الجمع</h3><p>مفهوم الجمع: سلة التفاح، وحوض السمك، وجملة الجمع.</p><span class="pr" data-pr="math15"></span></button>
+      <button class="game" data-game="math16" style="--a:#29b6f6;--b:#ffb300"><span class="ic">🐦</span><h3>عصافير الطرح</h3><p>مفهوم الطرح: العصافير تطير، والضفدع يقفز للخلف، وجملة الطرح.</p><span class="pr" data-pr="math16"></span></button>
     </div>
   </section>
 </div>
 
 <div class="wrap"><p class="credits">مدير إدارة قسم ذوي الإعاقة: <b>أ. فيصل بن صالح الزهراني</b><br>مدارس الفيصلية الأهلية</p>
 <p class="copyright">© ٢٠٢٦ <b>أحمد حازم عبد الله</b> — جميع الحقوق محفوظة.<br>لا يجوز نسخ أو استخدام أو إعادة نشر أي جزء من هذه المنصة أو ألعابها أو محتواها أو أفكارها دون إذن مسبق من صاحبها.</p></div>
-<div id="gameWrap" hidden><iframe id="gameFrame" title="اللعبة" allow="gamepad; fullscreen; autoplay; microphone"></iframe></div>
+<div id="gameWrap" hidden><iframe id="gameFrame" title="اللعبة" allow="gamepad; fullscreen; autoplay; microphone"></iframe><button id="gameHold" title="إذا علقت اللعبة: اضغط مطولًا" aria-label="إذا علقت اللعبة اضغط مطولًا">🔄</button></div>
+<div class="confirm" id="gameStuck" hidden><div class="panel"><h3 id="stuckTitle">هل علقت اللعبة؟</h3><p class="note" id="stuckText" style="margin:10px 0 14px">تقدّم الطالب محفوظ، ولن يضيع شيء.</p><div class="row"><button class="btn primary" id="stuckRetry">🔄 أعد تشغيل اللعبة</button><button class="btn" id="stuckBack">↩️ ارجع إلى الألعاب</button><button class="btn" id="stuckStay">أكمل اللعب</button></div></div></div>
 <div class="update" id="updateBar" hidden>🔄 يوجد تحديث جديد للألعاب <button class="btn sm" id="btnUpdate" style="background:#fff;color:#14532d">تحديث الآن</button></div>
 <div class="confirm" id="confirmBox" hidden><div class="panel"><h3 id="cTitle"></h3><p id="cText" class="note"></p><div style="display:flex;gap:10px;justify-content:center"><button class="btn danger" id="cYes">نعم، احذف</button><button class="btn" id="cNo">إلغاء</button></div></div></div>
 
@@ -247,7 +255,12 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const AR=n=>Number(n).toLocaleString('ar-EG');
 const VERSION=window.HUROOF_VERSION||'1';
 const VIEWS=['vLoading','vAuth','vParent','vTeacher','vHub','vAdmin'];
-function view(id){ VIEWS.forEach(v=>$('#'+v).hidden=v!==id); window.scrollTo(0,0); }
+// the waiting spinner never spins forever: after 20 s it offers a way forward
+let slowT=0;
+function view(id){ VIEWS.forEach(v=>$('#'+v).hidden=v!==id); window.scrollTo(0,0); clearTimeout(slowT); const sb=$('#slowBox'); if(sb){ sb.hidden=true; if(id==='vLoading') slowT=setTimeout(()=>sb.hidden=false,20000); } }
+slowT=setTimeout(()=>{ const sb=$('#slowBox'); if(sb) sb.hidden=false; },20000);
+// a request to the cloud can wait forever on a weak network (writes never answer while offline), so nothing waits on one without a limit
+const limit=(p,ms)=>Promise.race([p,new Promise((_,no)=>setTimeout(()=>no({code:'unavailable'}),ms))]);
 function msg(el,text,ok){ el.hidden=!text; el.textContent=text||''; el.className='msg '+(ok?'ok':'err'); }
 const AV=['🦁','🐯','🐼','🦊','🐸','🐵','🐰','🐨','🦄','🐙','🐬','🦉'], COL=['#ff9a1f','#3fa9ff','#3fd17a','#c86adf','#ff6b8a','#2fc6c0','#f2c230','#ff7a4d'];
 const avatarOf=s=>{ let h=0; for(const c of s) h=(h*31+c.charCodeAt(0))>>>0; return {e:AV[h%AV.length],c:COL[(h>>3)%COL.length]}; };
@@ -256,7 +269,7 @@ const normCode=c=>(c||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
 function genCode(n){ const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; const r=new Uint32Array(n); crypto.getRandomValues(r); return [...r].map(x=>a[x%a.length]).join(''); }
 
 /* ---------- Firebase ---------- */
-if(!window.firebase||!window.HUROOF_FIREBASE){ $('#vLoading').innerHTML='<p class="panel">تعذّر الاتصال بخدمة الحسابات. تحقق من الإنترنت ثم أعد فتح الصفحة.</p>'; return; }
+if(!window.firebase||!window.HUROOF_FIREBASE){ clearTimeout(slowT); $('#vLoading').innerHTML='<div class="panel slow"><p>تعذّر الاتصال بخدمة الحسابات. تحقق من الإنترنت.</p><p style="margin-top:12px"><button class="btn primary" onclick="location.reload()">🔄 حاول مرة أخرى</button></p></div>'; return; }
 firebase.initializeApp(window.HUROOF_FIREBASE);
 const auth=firebase.auth(), db=firebase.firestore(), TS=()=>firebase.firestore.FieldValue.serverTimestamp();
 const ERR={'auth/email-already-in-use':'هذا البريد مسجّل من قبل. اختر «تسجيل الدخول».','auth/invalid-email':'البريد الإلكتروني غير صحيح.','auth/weak-password':'كلمة المرور قصيرة، اكتب ٦ أحرف على الأقل.','auth/invalid-credential':'البريد أو كلمة المرور غير صحيحة.','auth/wrong-password':'البريد أو كلمة المرور غير صحيحة.','auth/user-not-found':'لا يوجد حساب بهذا البريد.','auth/too-many-requests':'محاولات كثيرة. انتظر قليلًا ثم حاول مرة أخرى.','auth/network-request-failed':'لا يوجد اتصال بالإنترنت.','permission-denied':'لا تملك صلاحية لهذا الإجراء.','not-found':'الرمز غير صحيح. تأكد منه مع المعلم.','unavailable':'لا يوجد اتصال بالإنترنت.'};
@@ -285,21 +298,23 @@ $('#btnHome').onclick=async()=>{ await stopPlayer(); home(); };
 let signingUp=false;
 auth.onAuthStateChanged(u=>{ if(signingUp) return; if(u) route(u); else { me=null; $('#who').hidden=true; if(player&&player.guest) return; view('vAuth'); setMode('in'); if(blockedMsg){ msg($('#authErr'),blockedMsg); blockedMsg=''; } } });
 let blockedMsg='';
-async function route(u){ view('vLoading'); let teacher=false, admin=false, blocked=false;
- try{ blocked=(await db.doc('blocked/'+u.uid).get()).exists; }catch(e){}
+async function route(u){ view('vLoading'); let teacher=false, admin=false, blocked=false, noNet=false;
+ try{ blocked=(await limit(db.doc('blocked/'+u.uid).get(),15000)).exists; }catch(e){}
  if(blocked){ blockedMsg='تم إيقاف هذا الحساب. تواصل مع إدارة المدرسة.'; await auth.signOut(); return; }
- try{ teacher=(await db.doc('teachers/'+u.uid).get()).exists; }catch(e){}
- try{ admin=(await db.doc('admins/'+u.uid).get()).exists; }catch(e){}
- // keep the e-mail on the profile so the admin can tell accounts apart
- try{ if(teacher) await db.doc('teachers/'+u.uid).update({email:u.email}); else await db.doc('users/'+u.uid).set({email:u.email,name:u.displayName||''},{merge:true}); }catch(e){}
+ try{ teacher=(await limit(db.doc('teachers/'+u.uid).get(),15000)).exists; }catch(e){ noNet=true; }
+ // without an answer we can't tell a teacher from a parent: offer to try again instead of opening the wrong page
+ if(noNet){ clearTimeout(slowT); $('#slowBox').hidden=false; return; }
+ try{ admin=(await limit(db.doc('admins/'+u.uid).get(),15000)).exists; }catch(e){}
+ // keep the e-mail on the profile so the admin can tell accounts apart (not awaited: a write never answers while offline)
+ (teacher?db.doc('teachers/'+u.uid).update({email:u.email}):db.doc('users/'+u.uid).set({email:u.email,name:u.displayName||''},{merge:true})).catch(()=>{});
  me={uid:u.uid,name:u.displayName||u.email,teacher,admin}; $('#whoName').textContent=(admin?'🛡️ ':teacher?'🧑‍🏫 ':'👨‍👩‍👧 ')+me.name; $('#who').hidden=false; $('#btnAdmin').hidden=!admin; $('#adminClaim').hidden=admin; home(); }
 function home(){ if(!me){ view('vAuth'); return; } if(me.teacher){ view('vTeacher'); loadTeacher(); } else { view('vParent'); loadParent(); } }
 
 /* ---------- progress summaries ---------- */
-const GAMEKEYS={huroof:['huroof_progress'],ayn:['ayn_progress'],harakat:['hrk2_progress','hrk2_medals'],blend:['blend_progress','blend_medals'],math1:['math1_progress'],math2:['math2_progress'],math3:['math3_progress'],noor:['noor_progress','noor_medals'],fahm:['fahm_progress','fahm_medals'],num:['num_progress','num_medals'],math4:['math4_progress'],math5:['math5_progress'],math6:['math6_progress'],math7:['math7_progress'],math8:['math8_progress'],math9:['math9_progress'],math10:['math10_progress'],math11:['math11_progress'],math12:['math12_progress'],math13:['math13_progress'],math14:['math14_progress'],math15:['math15_progress']};
+const GAMEKEYS={huroof:['huroof_progress'],ayn:['ayn_progress'],harakat:['hrk2_progress','hrk2_medals'],blend:['blend_progress','blend_medals'],math1:['math1_progress'],math2:['math2_progress'],math3:['math3_progress'],noor:['noor_progress','noor_medals'],fahm:['fahm_progress','fahm_medals'],num:['num_progress','num_medals'],math4:['math4_progress'],math5:['math5_progress'],math6:['math6_progress'],math7:['math7_progress'],math8:['math8_progress'],math9:['math9_progress'],math10:['math10_progress'],math11:['math11_progress'],math12:['math12_progress'],math13:['math13_progress'],math14:['math14_progress'],math15:['math15_progress'],math16:['math16_progress']};
 // the reading lessons, shown on the hub unit by unit (lesson id, number of stages)
 const UNITS={fatha:[['fl',5],['fw',3],['fs',2]],kasra:[['kl',5],['fk',2],['kw',2],['ks',2]],damma:[['dl',5],['mx',2],['dw',2],['rv',2]],madd:[['ma',2],['my',2],['mw',2]],sukun:[['sk',3],['sh',2],['ss',1]],tanween:[['tn',3],['tx',2],['tw',2]]};
-const CPT=[['math4',3],['math5',3],['math6',3],['math7',4],['math8',5]], NUMG=[['math9',4],['math10',3],['math11',3],['math12',3],['math13',3],['math14',3],['math15',3]];
+const CPT=[['math4',3],['math5',3],['math6',3],['math7',4],['math8',5]], NUMG=[['math9',4],['math10',3],['math11',3],['math12',3],['math13',3],['math14',3],['math15',3],['math16',3]];
 const parse=v=>{ try{ return v?JSON.parse(v):null; }catch(e){ return null; } };
 function summarize(data){ // data: {game:{key:jsonString}}
  const g=k=>data[k]||{}; const s={};
@@ -319,19 +334,19 @@ function summarize(data){ // data: {game:{key:jsonString}}
  s.numg=0; for(const [gm,n] of NUMG){ const p=parse(g(gm)[gm+'_progress'])||{}; const d=Object.keys(p).filter(k=>k[0]!=='_'&&p[k]&&p[k].stars>0).length; s.cpt[gm]=[d,n]; s.numg+=d; }
  s.medals=s.hMedals+s.bMedals; return s; }
 const bar=(n,of)=>`<div class="bar" title="${AR(n)} من ${AR(of)}"><i style="width:${Math.round(100*Math.min(1,n/of))}%"></i></div><small>${AR(n)} / ${AR(of)}</small>`;
-async function readProgress(sid){ const out={}; const docs=await Promise.all(Object.keys(GAMEKEYS).map(g=>db.doc(`students/${sid}/progress/${g}`).get())); docs.forEach(d=>{ if(d.exists) out[d.id]=(d.data().data)||{}; }); return out; }
+async function readProgress(sid){ const out={}; const docs=await limit(Promise.all(Object.keys(GAMEKEYS).map(g=>db.doc(`students/${sid}/progress/${g}`).get())),20000); docs.forEach(d=>{ if(d.exists) out[d.id]=(d.data().data)||{}; }); return out; }
 
 /* ---------- teacher ---------- */
 async function loadTeacher(){ const tb=$('#tBody'); tb.innerHTML='<tr><td colspan="17"><div class="spin"></div></td></tr>';
- try{ const qs=await db.collection('students').where('teacherUid','==',me.uid).get(); const rows=await Promise.all(qs.docs.map(async d=>{ const st=d.data(); const pr=await readProgress(d.id).catch(()=>({})); return {id:d.id,name:st.name,parents:(st.parentUids||[]).length,s:summarize(pr)}; }));
+ try{ const qs=await limit(db.collection('students').where('teacherUid','==',me.uid).get(),20000); const rows=await Promise.all(qs.docs.map(async d=>{ const st=d.data(); const pr=await readProgress(d.id).catch(()=>({})); return {id:d.id,name:st.name,parents:(st.parentUids||[]).length,s:summarize(pr)}; }));
   rows.sort((a,b)=>a.name.localeCompare(b.name,'ar')); $('#teacherEmpty').hidden=rows.length>0;
   tb.innerHTML=rows.map(r=>{ const a=avatarOf(r.id); return `<tr><td><b>${a.e} ${esc(r.name)}</b><br><small class="note">${r.parents?`مرتبط بـ ${AR(r.parents)} ولي أمر`:'لم يرتبط ولي أمر بعد'}</small></td>
    <td><span class="code">${fmtCode(r.id)}</span> <button class="btn sm" data-copy="${r.id}">نسخ</button></td>
-   <td>${bar(r.s.huroof,28)}</td><td>${bar(r.s.aynLesson,4)}<small>سباق: ${AR(r.s.aynRace)} حرفًا</small></td><td>${bar(r.s.harakat,28)}</td><td>${bar(r.s.blend,3)}</td><td>${bar(r.s.noor,51)}</td><td>${bar(r.s.fahm,14)}</td><td>${bar(r.s.colors,10)}</td><td>${bar(r.s.shapes,9)}</td><td>${bar(r.s.longshort,4)}</td><td>${bar(r.s.bigsmall,4)}</td><td>${bar(r.s.num,12)}</td><td>${bar(r.s.concepts,18)}</td><td>${bar(r.s.numg,22)}</td><td><b>🏅 ${AR(r.s.medals)}</b></td>
+   <td>${bar(r.s.huroof,28)}</td><td>${bar(r.s.aynLesson,4)}<small>سباق: ${AR(r.s.aynRace)} حرفًا</small></td><td>${bar(r.s.harakat,28)}</td><td>${bar(r.s.blend,3)}</td><td>${bar(r.s.noor,51)}</td><td>${bar(r.s.fahm,14)}</td><td>${bar(r.s.colors,10)}</td><td>${bar(r.s.shapes,9)}</td><td>${bar(r.s.longshort,4)}</td><td>${bar(r.s.bigsmall,4)}</td><td>${bar(r.s.num,12)}</td><td>${bar(r.s.concepts,18)}</td><td>${bar(r.s.numg,25)}</td><td><b>🏅 ${AR(r.s.medals)}</b></td>
    <td style="white-space:nowrap"><button class="btn sm primary" data-play="${r.id}" data-name="${esc(r.name)}">▶ العب</button> <button class="btn sm danger" data-del="${r.id}" data-name="${esc(r.name)}">حذف</button></td></tr>`; }).join('');
  }catch(e){ tb.innerHTML=`<tr><td colspan="17"><div class="msg err">${esc(errText(e))}</div></td></tr>`; } }
 $('#fAdd').addEventListener('submit',async e=>{ e.preventDefault(); const name=$('#inStudent').value.trim(); if(!name){ msg($('#addMsg'),'اكتب اسم الطالب.'); return; } $('#btnAdd').disabled=true;
- try{ const id=genCode(10); await db.doc('students/'+id).set({name,teacherUid:me.uid,parentUids:[],createdAt:TS()}); $('#inStudent').value=''; msg($('#addMsg'),`أُضيف ${name}. رمز الدعوة لولي أمره: ${fmtCode(id)}`,true); loadTeacher(); }catch(err){ msg($('#addMsg'),errText(err)); }
+ try{ const id=genCode(10); await limit(db.doc('students/'+id).set({name,teacherUid:me.uid,parentUids:[],createdAt:TS()}),15000); $('#inStudent').value=''; msg($('#addMsg'),`أُضيف ${name}. رمز الدعوة لولي أمره: ${fmtCode(id)}`,true); loadTeacher(); }catch(err){ msg($('#addMsg'),errText(err)); }
  $('#btnAdd').disabled=false; });
 $('#btnRefresh').onclick=loadTeacher;
 $('#tBody').addEventListener('click',async e=>{ const c=e.target.closest('[data-copy]'), p=e.target.closest('[data-play]'), d=e.target.closest('[data-del]');
@@ -344,13 +359,13 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 
 /* ---------- parent ---------- */
 async function loadParent(){ const box=$('#parentKids'); box.innerHTML='<div class="spin"></div>';
- try{ const qs=await db.collection('students').where('parentUids','array-contains',me.uid).get(); $('#parentEmpty').hidden=qs.size>0;
+ try{ const qs=await limit(db.collection('students').where('parentUids','array-contains',me.uid).get(),20000); $('#parentEmpty').hidden=qs.size>0;
   const cards=await Promise.all(qs.docs.map(async d=>{ const st=d.data(); const s=summarize(await readProgress(d.id).catch(()=>({}))); const a=avatarOf(d.id);
    return `<button class="kid" data-play="${d.id}" data-name="${esc(st.name)}" style="--c:${a.c}"><span class="av">${a.e}</span><b>${esc(st.name)}</b><small>🦁 ${AR(s.huroof)}/٢٨ حرفًا · 🏅 ${AR(s.medals)}</small><span class="btn sm primary">▶ العب</span></button>`; }));
   box.innerHTML=cards.join(''); }catch(e){ box.innerHTML=`<div class="msg err">${esc(errText(e))}</div>`; } }
 $('#parentKids').addEventListener('click',e=>{ const p=e.target.closest('[data-play]'); if(p) startPlayer({sid:p.dataset.play,name:p.dataset.name}); });
 $('#fLink').addEventListener('submit',async e=>{ e.preventDefault(); const code=normCode($('#inLink').value); const m=$('#linkMsg'); if(code.length<10){ msg(m,'الرمز قصير. اكتبه كما أرسله المعلم.'); return; } $('#btnLink').disabled=true;
- try{ await db.doc('students/'+code).update({parentUids:firebase.firestore.FieldValue.arrayUnion(me.uid)}); $('#inLink').value=''; msg(m,'تم ربط الطفل بحسابك 🎉',true); loadParent(); }catch(err){ msg(m,err.code==='permission-denied'?'الرمز غير صحيح، أو وصل الطفل للحد الأقصى من أولياء الأمور.':errText(err)); }
+ try{ await limit(db.doc('students/'+code).update({parentUids:firebase.firestore.FieldValue.arrayUnion(me.uid)}),15000); $('#inLink').value=''; msg(m,'تم ربط الطفل بحسابك 🎉',true); loadParent(); }catch(err){ msg(m,err.code==='permission-denied'?'الرمز غير صحيح، أو وصل الطفل للحد الأقصى من أولياء الأمور.':errText(err)); }
  $('#btnLink').disabled=false; });
 
 /* ---------- admin: remove (block) teachers and parents ---------- */
@@ -393,9 +408,9 @@ async function startPlayer(p){ await stopPlayer(); view('vLoading');
 function setSync(t,on){ const s=$('#syncState'); s.textContent=t; s.classList.toggle('on',!!on); }
 async function syncNow(){ if(!player||player.guest) return; const jobs=[]; for(const g in GAMEKEYS){ const snap=snapshot(g), js=JSON.stringify(snap); if(js!==lastSaved[g]){ lastSaved[g]=js; jobs.push(db.doc(`students/${player.sid}/progress/${g}`).set({data:snap,updatedAt:TS()}).catch(e=>{ lastSaved[g]=null; setSync('⚠️ لم يُحفظ آخر تقدّم، سنحاول مرة أخرى',false); })); } }
  if(jobs.length){ await Promise.all(jobs); if(lastSaved&&Object.values(lastSaved).every(v=>v!==null)) setSync('☁️ حُفظ التقدّم '+new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'}),true); } }
-async function stopPlayer(){ closeGame(); if(!player) return; clearInterval(syncTimer); if(player.guest){ for(const k of ALLKEYS){ const v=localStorage.getItem(k); if(v!=null) localStorage.setItem('guest_'+k,v); } } else await syncNow(); clearKeys(); player=null; }
+async function stopPlayer(){ closeGame(); if(!player) return; clearInterval(syncTimer); if(player.guest){ for(const k of ALLKEYS){ const v=localStorage.getItem(k); if(v!=null) localStorage.setItem('guest_'+k,v); } } else await limit(syncNow(),5000).catch(()=>{}); clearKeys(); player=null; }
 function showHubProgress(){ const data={}; for(const g in GAMEKEYS) data[g]=snapshot(g); const s=summarize(data);
- const set=(g,t)=>{ const el=$(`[data-pr="${g}"]`); el.textContent=t; };
+ const set=(g,t)=>{ const el=$(`[data-pr="${g}"]`); if(el) el.textContent=t; };
  set('huroof',`⭐ ${AR(s.huroof)} / ٢٨ حرفًا`); set('ayn',`الدرس ${AR(s.aynLesson)}/٤ · سباق ${AR(s.aynRace)} حرفًا`); set('harakat',`⭐ ${AR(s.harakat)} حرفًا · 🏅 ${AR(s.hMedals)}`); set('math2',`📏 ${AR(s.longshort)}/٤ أنشطة`); set('math3',`🐘 ${AR(s.bigsmall)}/٤ أنشطة`); for(const u in s.units) set('u-'+u,`⭐ ${AR(s.units[u][0])}/${AR(s.units[u][1])} مرحلة`); set('num',`🔢 ${AR(s.num)}/١٢ مرحلة`); for(const gm in s.cpt) set(gm,`⭐ ${AR(s.cpt[gm][0])}/${AR(s.cpt[gm][1])} أنشطة`); set('fahm',`🎭 ${AR(s.fahm)}/١٤ مرحلة`); set('math1',`🎨 ${AR(s.colors)}/١٠ ألوان · 🔷 ${AR(s.shapes)}/٩ أشكال`); set('blend',`${AR(s.blend)}/٣ مراحل · 🏅 ${AR(s.bMedals)}`); }
 $('#btnSwitch').onclick=async()=>{ const wasGuest=player&&player.guest; await stopPlayer(); if(wasGuest&&!me) view('vAuth'); else home(); };
 $('#btnGuest').onclick=()=>startPlayer({guest:true,name:'لاعب ضيف'});
@@ -404,9 +419,26 @@ $$('.game').forEach(b=>b.onclick=()=>openGame(b.dataset.game,b.dataset.u));
 function showSect(k){ $$('.sectbtn').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.sect===k))); $('#g-ar').hidden=k!=='ar'; $('#g-ma').hidden=k!=='ma'; try{ localStorage.setItem('hub_sect',k); }catch(e){} }
 $$('.sectbtn').forEach(b=>b.onclick=()=>showSect(b.dataset.sect));
 showSect((()=>{ try{ return localStorage.getItem('hub_sect')||'ar'; }catch(e){ return 'ar'; } })());
-function openGame(g,u){ const f=$('#gameFrame'); f.src=g+'.html?v='+encodeURIComponent(VERSION)+(u?'&u='+u:''); $('#gameWrap').hidden=false; frameOpen=true; document.body.style.overflow='hidden'; setTimeout(()=>{ try{ f.focus(); }catch(e){} },300); }
-function closeGame(){ if(!frameOpen) return; frameOpen=false; const f=$('#gameFrame'); f.src='about:blank'; $('#gameWrap').hidden=true; document.body.style.overflow=''; syncNow(); if(player) showHubProgress(); }
-addEventListener('message',e=>{ if(e.data==='ayn-close'&&e.source===$('#gameFrame').contentWindow) closeGame(); });
+// a game that does not open, or breaks while opening, restarts by itself once; after that the teacher gets a clear choice
+let gameUrl='', loadT=0, loadedAt=0, retried=false;
+function loadFrame(){ const f=$('#gameFrame'); clearTimeout(loadT); loadedAt=0; f.src=gameUrl; loadT=setTimeout(gameFailed,25000); }
+function gameFailed(){ if(!frameOpen) return; clearTimeout(loadT); if(!retried){ retried=true; loadFrame(); return; } showStuck('اللعبة لم تفتح','قد يكون الإنترنت ضعيفًا الآن. تقدّم الطالب محفوظ، ولن يضيع شيء.',false); }
+function showStuck(t,x,canStay){ $('#stuckTitle').textContent=t; $('#stuckText').textContent=x; $('#stuckStay').hidden=!canStay; $('#gameStuck').hidden=false; }
+function openGame(g,u){ const f=$('#gameFrame'); gameUrl=g+'.html?v='+encodeURIComponent(VERSION)+(u?'&u='+u:''); retried=false; try{ sessionStorage.removeItem('__guardCrash'); }catch(e){} loadFrame(); $('#gameWrap').hidden=false; frameOpen=true; document.body.style.overflow='hidden'; setTimeout(()=>{ try{ f.focus(); }catch(e){} },300); }
+function closeGame(){ if(!frameOpen) return; frameOpen=false; clearTimeout(loadT); $('#gameStuck').hidden=true; const f=$('#gameFrame'); f.src='about:blank'; $('#gameWrap').hidden=true; document.body.style.overflow=''; syncNow(); if(player) showHubProgress(); }
+$('#gameFrame').addEventListener('load',()=>{ if(frameOpen&&$('#gameFrame').src.indexOf(gameUrl)>=0){ clearTimeout(loadT); loadedAt=Date.now(); } });
+addEventListener('message',e=>{ if(e.source!==$('#gameFrame').contentWindow) return; if(e.data==='ayn-close') closeGame();
+ else if(e.data&&e.data.t==='game-stuck') showStuck('الجهاز مشغول الآن','أغلق النوافذ الأخرى ثم أعد تشغيل اللعبة، أو فعّل «الوضع الخفيف» من صفحة الألعاب. تقدّم الطالب محفوظ.',false);
+ else if(e.data&&e.data.t==='game-error'){ console.warn('[game]',e.data.m); if(frameOpen&&(!loadedAt||Date.now()-loadedAt<10000)) gameFailed(); } });
+$('#stuckRetry').onclick=()=>{ $('#gameStuck').hidden=true; retried=false; loadFrame(); };
+$('#stuckBack').onclick=()=>{ closeGame(); };
+$('#stuckStay').onclick=()=>{ $('#gameStuck').hidden=true; };
+(function(){ const b=$('#gameHold'); let t=0; const end=()=>{ clearTimeout(t); b.classList.remove('on'); };
+ b.addEventListener('pointerdown',e=>{ e.preventDefault(); b.classList.add('on'); t=setTimeout(()=>{ end(); showStuck('هل علقت اللعبة؟','تقدّم الطالب محفوظ، ولن يضيع شيء.',true); },1000); });
+ ['pointerup','pointercancel','pointerleave'].forEach(n=>b.addEventListener(n,end)); b.addEventListener('contextmenu',e=>e.preventDefault()); })();
+// «الوضع الخفيف» for an old device: remembered on this device only, read by every 3D game when it opens
+(function(){ const b=$('#btnLite'); const on=()=>{ try{ return localStorage.getItem('huroof_lite')==='1'; }catch(e){ return false; } }; const show=()=>{ b.textContent=on()?'⚡ الوضع الخفيف: يعمل':'⚡ الوضع الخفيف: متوقف'; b.setAttribute('aria-pressed',String(on())); }; show();
+ b.onclick=()=>{ try{ if(on()) localStorage.removeItem('huroof_lite'); else localStorage.setItem('huroof_lite','1'); }catch(e){} show(); }; })();
 addEventListener('pagehide',()=>{ syncNow(); });
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) syncNow(); else checkUpdate(); });
 

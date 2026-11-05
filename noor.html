@@ -8,10 +8,20 @@
 <meta name="copyright" content="© ٢٠٢٦ أحمد حازم عبد الله — جميع الحقوق محفوظة. لا يجوز نسخ أو استخدام أو إعادة نشر أي جزء من هذه الألعاب أو محتواها دون إذن مسبق من صاحبها.">
 </head>
 <body>
+<script>
+/* First script of every game page (injected by build.ps1): tells the hub when a game breaks while starting,
+   so the hub can restart it by itself instead of leaving the teacher to reload the whole site. */
+(function(){
+ if(window.parent===window) return;
+ function tell(m){ try{ window.parent.postMessage({t:'game-error',m:String(m||'').slice(0,160)},'*'); }catch(e){} }
+ addEventListener('error',function(e){ if(e.target&&e.target!==window) return; tell(e.message); });
+ addEventListener('unhandledrejection',function(e){ tell(e.reason&&e.reason.message||e.reason); });
+})();
+</script>
 <title>القراءة بالحركات</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;700;800&family=Lalezar&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;700;800&family=Lalezar&display=swap" media="print" onload="this.media='all'">
 <style>
 :root{
   /* Layout: same cinematic city as أبطال الحركات. Syllables keep fixed colours (1st orange, 2nd cyan, 3rd pink) until they fuse into one white word. */
@@ -170,27 +180,38 @@ i.ps svg{width:20px;height:20px}
 <div class="toast panel" id="toast" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>window.THREE||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>')</script>
+<script>window.THREE||document.write('<script src="https://unpkg.com/three@0.128.0/build/three.min.js"><\/script>')</script>
 <script>
 /* Performance guard for every 3D game (injected by build.ps1 right after three.js):
    - every device starts with the full picture the game asks for (phones are only capped at 2× pixels)
+   - the teacher can turn on «الوضع الخفيف» on the hub for an old device: it starts light and stays light
    - only if the game stays really slow (under 20 fps for 10 s) does the picture get lighter, one small step at a time,
      and it climbs back up by itself when the game runs smoothly again
-   - if the graphics card gives up (white screen), the game reloads itself; progress is kept in localStorage */
+   - if the graphics card gives up (white screen), the game reloads itself; progress is kept in localStorage.
+     After three crashes in two minutes it stops looping and asks the hub to offer a way out.
+   - leaving a game hands its graphics memory back at once instead of waiting for the browser to clean up */
 (function(){
  if(!window.THREE||THREE.__guarded) return; THREE.__guarded=true;
  const phone=/Android|iPhone|Mobile/i.test(navigator.userAgent);
- let tier=0, R=null, SC=null, want=1, shadowsWanted=null;
+ let tier=0, floor=0, R=null, SC=null, want=1, shadowsWanted=null, leaving=false;
+ try{ if(localStorage.getItem('huroof_lite')==='1') floor=3; }catch(e){}
  const cap=()=>[phone?2:Infinity,1.5,1.15,1][tier];
  const R0=THREE.WebGLRenderer;
  function refreshMats(){ if(SC) SC.traverse(o=>{ const ms=Array.isArray(o.material)?o.material:o.material?[o.material]:[]; ms.forEach(m=>m.needsUpdate=true); }); }
  function apply(){ if(!R) return; R.__setPR(Math.min(want,cap())); R.setSize(innerWidth,innerHeight,false);
   const sh=tier<3&&shadowsWanted; if(shadowsWanted!=null&&R.shadowMap.enabled!==sh){ R.shadowMap.enabled=sh; refreshMats(); } }
- function lost(){ if(document.getElementById('__lost')) return; const d=document.createElement('div'); d.id='__lost'; d.dir='rtl';
+ function crashes(){ let c={n:0,t:0}; try{ c=JSON.parse(sessionStorage.getItem('__guardCrash'))||c; }catch(e){} const now=Date.now(); c=now-c.t<120000?{n:c.n+1,t:now}:{n:1,t:now}; try{ sessionStorage.setItem('__guardCrash',JSON.stringify(c)); }catch(e){} return c.n; }
+ function lost(){ if(leaving||document.getElementById('__lost')) return; const n=crashes(); const d=document.createElement('div'); d.id='__lost'; d.dir='rtl';
   d.style.cssText='position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:#0a1030;color:#ffc83a;font:800 26px Tahoma,sans-serif;text-align:center;padding:20px';
+  if(n>=3){ d.textContent='الجهاز مشغول الآن 😴'; document.body.appendChild(d); try{ window.parent.postMessage({t:'game-stuck'},'*'); }catch(e){} return; }
   d.textContent='جارٍ إعادة تشغيل اللعبة… 🔄'; document.body.appendChild(d); try{ sessionStorage.setItem('__guardTier',String(Math.min(3,tier+1))); }catch(e){} setTimeout(()=>location.reload(),1200); }
  // a reload after a crash comes back one step lighter
  try{ const t=+sessionStorage.getItem('__guardTier'); if(t>tier) tier=t; }catch(e){}
- function Guarded(o){ const r=new R0(o); R=r; const render=r.render.bind(r); r.render=function(s,c){ SC=s; if(shadowsWanted==null) shadowsWanted=r.shadowMap.enabled; return render(s,c); };
+ if(floor>tier) tier=floor;
+ addEventListener('pagehide',()=>{ leaving=true; try{ if(R) R.forceContextLoss(); }catch(e){} });
+ addEventListener('pageshow',e=>{ if(e.persisted) location.reload(); }); // came back from the browser's page memory with no picture
+ function Guarded(o){ const r=new R0(o); R=r; THREE.__R=r; const render=r.render.bind(r); r.render=function(s,c){ SC=s; if(shadowsWanted==null){ shadowsWanted=r.shadowMap.enabled; if(tier>=3) apply(); } return render(s,c); };
   // the games pick their own quality; the guard only lowers it while the device is struggling (three r128 defines these per instance)
   r.__setPR=r.setPixelRatio.bind(r); r.setPixelRatio=v=>{ want=v; r.__setPR(Math.min(v,cap())); }; r.setPixelRatio(devicePixelRatio||1);
   r.domElement.addEventListener('webglcontextlost',e=>{ e.preventDefault(); lost(); },false);
@@ -199,7 +220,7 @@ i.ps svg{width:20px;height:20px}
   (function watch(t){ requestAnimationFrame(watch); const dt=t-last; last=t; if(document.hidden||dt>400||dt<=0||t-t0<8000) return; acc+=dt; n++;
    if(acc>5000){ const fps=1000*n/acc; acc=0; n=0;
     if(fps<20){ fast=0; if(++slow>=2&&tier<3){ tier++; slow=0; apply(); } }
-    else if(fps>50){ slow=0; if(++fast>=3&&tier>0){ tier--; fast=0; apply(); } }
+    else if(fps>50){ slow=0; if(++fast>=3&&tier>floor){ tier--; fast=0; apply(); } }
     else { slow=0; fast=0; } } })(last);
   return r; }
  Guarded.prototype=R0.prototype; THREE.WebGLRenderer=Guarded;

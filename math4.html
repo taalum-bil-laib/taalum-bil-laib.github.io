@@ -8,10 +8,20 @@
 <meta name="copyright" content="© ٢٠٢٦ أحمد حازم عبد الله — جميع الحقوق محفوظة. لا يجوز نسخ أو استخدام أو إعادة نشر أي جزء من هذه الألعاب أو محتواها دون إذن مسبق من صاحبها.">
 </head>
 <body>
+<script>
+/* First script of every game page (injected by build.ps1): tells the hub when a game breaks while starting,
+   so the hub can restart it by itself instead of leaving the teacher to reload the whole site. */
+(function(){
+ if(window.parent===window) return;
+ function tell(m){ try{ window.parent.postMessage({t:'game-error',m:String(m||'').slice(0,160)},'*'); }catch(e){} }
+ addEventListener('error',function(e){ if(e.target&&e.target!==window) return; tell(e.message); });
+ addEventListener('unhandledrejection',function(e){ tell(e.reason&&e.reason.message||e.reason); });
+})();
+</script>
 <title>ثقيل وخفيف</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;700;800&family=Lalezar&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;700;800&family=Lalezar&display=swap" media="print" onload="this.media='all'">
 <style>
 :root{
   /* Layout: menus on the platform's night glass; each activity is a bright full-screen play table the child stretches and squashes by hand.
