@@ -713,7 +713,7 @@ const RC={on:false,q:[],pool:[],round:0,total:6,first:0,lane:1,x:0,phase:'run',t
 function txtTex(text,wide,col){ const W=wide?512:256; return ctex(W,256,(x,w,h)=>{ x.fillStyle='#ffffff'; x.beginPath(); if(x.roundRect) x.roundRect(8,8,w-16,h-16,wide?70:120); else x.rect(8,8,w-16,h-16); x.fill(); x.lineWidth=12; x.strokeStyle=col; x.stroke(); x.font=`800 ${wide?118:140}px "Baloo Bhaijaan 2", Tahoma, sans-serif`; x.textAlign='center'; x.textBaseline='middle'; x.fillStyle='#1a1a2e'; x.fillText(text,w/2,h/2+(wide?18:30)); },1,1); }
 function makeTextGate(opts,correct,wide){ const g=new THREE.Group(); g.userData.glow=[]; const FR=mat('#3a4560',{m:.4,r:.3}), col=GS.L.kind==='mixed'?'#ffc83a':H[GS.h].markC;
  opts.forEach((v,k)=>{ const x=LANEX[k]; const st=new THREE.MeshStandardMaterial({color:LIN('#ff9a1f'),emissive:LIN('#ffb347'),emissiveIntensity:1.6}); for(const s of [-1,1]){ mk(G.box(.3,4.6,.3),FR,x+s*1.6,2.3,0,g); mk(G.box(.06,4.2,.06),st,x+s*1.44,2.3,-.17,g,1); } mk(G.box(3.6,.35,.4),FR,x,4.65,0,g);
-  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:txtTex(v,wide,isN()?MONTC[numOf(v)]:col),transparent:true,fog:false})); if(wide) sp.scale.set(3.1,1.55,1); else sp.scale.set(2.5,2.5,1); sp.position.set(x,2.6,0); g.add(sp); if(k===correct&&S.diff==='easy') g.userData.glow.push(st); });
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:txtTex(v,wide,isN()?MONTC[numOf(v)]:col),transparent:true,fog:false})); if(wide) sp.scale.set(3.1,1.55,1); else sp.scale.set(2.5,2.5,1); sp.position.set(x,2.6,0); g.add(sp); if(k===correct&&(S.diff==='easy'||RC.round<2||(RC.q[0]&&RC.q[0].retry))) g.userData.glow.push(st); });
  g.position.z=92; world.add(g); return g; }
 const shortKind=()=>isN()||GS.L.kind==='letters'||GS.L.kind==='mixed';
 function startRace(){ GS.on=false; clearMag(); hideProps(); hideBubble(); boardsOn(); const L=GS.L; let items, pool;
@@ -727,6 +727,8 @@ function startRace(){ GS.on=false; clearMag(); hideProps(); hideBubble(); boards
 const raceQ=()=>isN()?'كم مكعبًا في البرج؟ ادخل بوابة رقمه':GS.L.kind==='car'?(GS.L.shadda?'انتبه للشدة! ادخل بوابة الكلمة نفسها':'انتبه للسكون! ادخل بوابة الكلمة نفسها'):GS.L.kind==='letters'?'ادخل بوابة الحرف نفسه':GS.L.kind==='mixed'?'انتبه للحركة! ادخل بوابة الحرف بحركته':'اقرأ المقاطع وادخل بوابة الكلمة';
 function updRace(){ $('#sMedal').textContent='🏅 '+AR(GS.medals); $('#sRound').textContent=`${AR(Math.min(RC.round+1,RC.total))} / ${AR(RC.total)}`; }
 function raceOpts(v){ const L=GS.L;
+ // the first two gates of every race: the wrong answers look clearly different (no twin with the same letter); the look-alikes come after
+ if(RC.round<2){ const far=isN()?ALLN.slice(0,Math.max(3,RC.max)).filter(n=>Math.abs(n-numOf(v))>=2).map(n=>NUMS[n]):RC.pool.filter(x=>x!==v&&baseOf(x)!==baseOf(v)); if(far.length>=2) return shuffle([v,...shuffle(far).slice(0,2)]); }
  if(isN()){ const o=[v]; let g=0; while(o.length<3&&g++<80){ const s=NUMS[1+((rnd()*Math.max(3,RC.max))|0)]; if(!o.includes(s)) o.push(s); } return shuffle(o); }
  // same letter with another vowel: the student has to look at the mark
  if(L.kind==='mixed'){ const M=L.tan?TAN:MK, b=baseOf(v), o=L.heroes.map(h=>b+M[h]); if(o.length<3) o.push(pick(ABC.filter(c=>c!==b))+M[vowelOf(v)]); return shuffle(o); }
@@ -742,7 +744,7 @@ function pop(html,ms){ const p=$('#pop'), top=state==='mag'&&GS.L&&GS.L.kind==='
 function judgeRace(){ const v=RC.cur, it=RC.q[0];
  if(RC.lane===RC.correct){ if(!it.retry) RC.first++; GS.medals++; MEDALS++; store.set('medals',MEDALS); Snd.play('medal'); rumble(260,.35,.8); burst(V1.set(LANEX[RC.lane],2.6,0),'#ffc83a',60); flyMedal(V1.set(LANEX[RC.lane],2.6,0)); dropObj(RC.gate); RC.gate=null; bumpMedal(GS.medals);
   pop(`<div class="big">${v}</div>🏅 أحسنت!`,2200); Speech.say(isN()?NNAME[numOf(v)]:v,.7); RC.q.shift(); RC.round++; RC.phase='run'; RC.t=0; $('#cW').innerHTML=''; $('#cQ').textContent='اجمع النجوم ⭐'; }
- else { Snd.play('no'); rumble(90,.1,.1); const got=RC.opts[RC.lane]; pop(`<div class="big">${v}</div>🙂 هذه «${got}». نحاول مرة أخرى`,3000); Speech.say(isN()?'عُدّ المكعبات مرة أخرى':v,.7); const again=RC.q.shift(); again.retry=1; RC.q.splice(Math.min(2,RC.q.length),0,again); RC.phase='after'; }
+ else { Snd.play('no'); rumble(90,.1,.1); const got=RC.opts[RC.lane]; pop(`<div class="big">${v}</div>🙂 هذه «${got}». نحاول مرة أخرى، وستضيء بوابتها ✨`,3000); Speech.say(isN()?'عُدّ المكعبات مرة أخرى':v,.7); const again=RC.q.shift(); again.retry=1; RC.q.splice(Math.min(2,RC.q.length),0,again); RC.phase='after'; }
  updRace(); }
 function finishRace(){ RC.on=false; const r=RC.first/RC.total, st=r>=.85?3:r>=.6?2:1; finishLesson(st,`قرأت ${AR(RC.total)} ${isN()?'أرقام':shortKind()?'حروف':'كلمات'} في السباق، ${AR(RC.first)} منها من أول مرة.`); }
 function updateRace(dt,t,I,sp){
@@ -805,7 +807,7 @@ function fahmGood(slot){ const F=GS.F; F.done=true; if(F.tries===0){ F.first++; 
  if(F.kind==='cloze') $('#cW').innerHTML=F.sent.map((x,i)=>`<span style="color:${i===F.blank?'#3fd17a':'#fff'}">${x[0]}</span>`).join(' ');
  Speech.say(F.kind==='story'?(F.ask==='who'?HNAME[F.pos[F.ans]]:F.vs[F.ans][0]):sentTxt(F.sent),.7); $('#sceneBtns').hidden=true; $('#tfBtns').hidden=true; $('#wordBtns').hidden=true;
  setTimeout(()=>{ if(GS.F===F&&state==='mag'){ F.round++; nextFahm(); } },2700); }
-function fahmBad(msg,slot,hintSel){ const F=GS.F; F.tries++; F.streak=0; Snd.play('no'); rumble(90,.1,.1); if(slot!=null) F.react[slot]={type:'no',t:0}; pop(msg,3200); if(F.tries>=(S.diff==='easy'?1:2)&&hintSel){ const e=$(hintSel); if(e) e.classList.add('hint'); } }
+function fahmBad(msg,slot,hintSel){ const F=GS.F; F.tries++; F.streak=0; Snd.play('no'); rumble(90,.1,.1); if(slot!=null) F.react[slot]={type:'no',t:0}; pop(msg,3200); if(hintSel){ const e=$(hintSel); if(e) e.classList.add('hint'); } }
 function fahmPick(v){ const F=GS.F; if(!F||F.done) return; const sb=i=>`#sceneBtns .sb[data-s="${i}"]`;
  if(F.kind==='watch'){ if(v===F.ans) return fahmGood(v); const b=$(sb(v)); b.classList.remove('no'); void b.offsetWidth; b.classList.add('no'); fahmBad(`هذا البطل يمثّل: <div class="big">${sentTxt(F.sents[v])}</div>اقرأ جملتك مرة أخرى 👀`,v,sb(F.ans)); }
  else if(F.kind==='order'){ const j=F.perm[v]; if(j===F.next){ $(sb(v)).querySelector('.num').textContent=AR(F.next+1); $(sb(v)).classList.add('ok'); F.react[v]={type:'win',t:0}; Snd.play('place'); Speech.say(F.sent[j][0],.7); F.next++; $('#cW').innerHTML=orderHTML(); if(F.next>=3) fahmGood(null); }
@@ -860,7 +862,7 @@ function numGood(){ const N=GS.N; N.done=true; if(N.tries===0) N.first++; GS.med
 function numPick(m){ const N=GS.N; if(!N||N.done||GS.kind!=='shape') return; const b=$(`#numBtns [data-n="${m}"]`);
  if(m===N.n){ b.classList.add('morph'); b.querySelector('.obj').innerHTML=`${NOBJ[m][0]}<span style="color:${MONTC[m]}">${NUMS[m]}</span>`; return numGood(); }
  N.tries++; Snd.play('no'); rumble(90,.1,.1); b.classList.remove('no'); void b.offsetWidth; b.classList.add('no'); pop(`${NOBJ[m][0]} يشبه الرقم <b style="color:${MONTC[m]}">${NUMS[m]}</b><br>انظر جيدًا إلى شكل الرقم <b style="color:${MONTC[N.n]}">${NUMS[N.n]}</b> 👀`,2800);
- if(N.tries>=(S.diff==='easy'?1:2)){ const c=$(`#numBtns [data-n="${N.n}"]`); if(c) c.classList.add('hint'); } }
+ if(N.tries>=1){ const c=$(`#numBtns [data-n="${N.n}"]`); if(c) c.classList.add('hint'); } }
 function numFinish(){ const N=GS.N, r=N.first/N.list.length; clearNum(); finishLesson(r>=.85?3:r>=.6?2:1,`${GS.kind==='meet'?'عددت':'طابقت'} ${AR(N.list.length)} أرقام، ${AR(N.first)} منها من أول محاولة.`); }
 function updateNum(dt,t,I){ const N=GS.N; if(!N) return;
  if(GS.kind==='meet'){ if(I.aE||I.midE) numCount(); }

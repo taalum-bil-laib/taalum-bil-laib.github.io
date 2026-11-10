@@ -218,6 +218,10 @@ const starsFor=(f,t)=>f>=t*.85?3:f>=t*.6?2:1;
 const T={ids:[],set(f,ms){ const id=setTimeout(()=>{ T.ids=T.ids.filter(x=>x!==id); f(); },ms); T.ids.push(id); return id; },clear(){ T.ids.forEach(clearTimeout); T.ids=[]; }};
 // errorless order: the first kind alone, then the second, then mixed
 const seq2=(a,b,n)=>{ const s=[a,a,a,b,b,b]; while(s.length<(n||10)) s.push(rnd()<.5?a:b); return s; };
+// every activity climbs four steps, shown as a small tag beside the question
+const lvChip=R=>{ const L=[['سهل جدًا','#2e9d3a'],['سهل','#1e88e5'],['متوسط','#ff8a3d'],['تحدٍّ','#8e24aa']][Math.min(3,Math.floor(R.i/R.total*4))]; return `<span class="tag" style="background:${L[1]}">${L[0]}</span>`; };
+// the first rounds of every activity are helped, whatever the child did before
+const easy=R=>R.i<3;
 const aidOf=id=>{ const ok=(PR[id]&&PR[id].ok)||0; return ok<4?0:ok<10?1:2; };
 
 /* ---------- screens ---------- */
@@ -288,39 +292,42 @@ css(`.ss{position:absolute;left:50%;top:58%;width:min(82vw,720px);transform:tran
 
 // ⚖️ the scale: the heavy side goes down
 const Scale={ start(){ stage.className='room'; this.seq=seq2('heavy','light',8); this.R=run('scale',8,'ميزان رائع! ⚖️',R=>this.round(R)); this.R.go(); },
- round(R){ const k=this.k=this.seq[R.i], hv=pick(HEAVY), lt=pick(LIGHT), hl=rnd()<.5; this.ready=false;
+ round(R){ const k=this.k=this.seq[R.i], hv=pick(easy(R)?HEAVY.slice(0,2):HEAVY), lt=pick(easy(R)?LIGHT.slice(0,3):LIGHT), hl=rnd()<.5; this.ready=false; this.hl=hl;
   stage.innerHTML=`<div class="ss"><div class="beam" id="beam"><div class="seat l"><span class="it" data-k="${hl?'heavy':'light'}">${(hl?hv:lt)[0]}</span></div><div class="seat r"><span class="it" data-k="${hl?'light':'heavy'}">${(hl?lt:hv)[0]}</span></div></div><div class="fulc"></div></div>`;
-  setGoal(`<span>${k==='heavy'?'أيهما ثقيل؟':'أيهما خفيف؟'}</span>${tagW(k)}${R.steps()}`); tip('شاهد الميزان… ⚖️');
+  setGoal(`<span>${k==='heavy'?'أيهما ثقيل؟':'أيهما خفيف؟'}</span>${tagW(k)}${lvChip(R)}${R.steps()}`); tip('شاهد الميزان… ⚖️');
   T.set(()=>{ Snd.play('whoosh'); $('#beam').style.transform=`rotate(${hl?-13:13}deg)`; },700);
-  T.set(()=>{ Snd.play('thud'); this.ready=true; tip(k==='heavy'?'اضغط على الثقيل (الذي نزل) ⬇️':'اضغط على الخفيف (الذي ارتفع) ⬆️'); this.again(); if(aidOf('scale')===0) T.set(()=>{ const e=$(`.it[data-k="${k}"]`); if(e&&!R.busy) e.classList.add('glow'); },2600); },1800); },
+  T.set(()=>{ Snd.play('thud'); this.ready=true; tip(k==='heavy'?'اضغط على الثقيل (الذي نزل) ⬇️':'اضغط على الخفيف (الذي ارتفع) ⬆️'); this.again(); if(aidOf('scale')===0||easy(R)) T.set(()=>{ const e=$(`.it[data-k="${k}"]`); if(e&&!R.busy) e.classList.add('glow'); },2600); },1800); },
  tap(x,y,t){ const it=t&&t.closest('.it'); if(!it||!this.ready||this.R.busy) return; const k=this.k;
   if(it.dataset.k===k){ it.classList.remove('glow'); it.classList.add('bump'); this.R.win(WD[k],CL[k]); }
-  else { it.classList.remove('thud'); void it.offsetWidth; it.classList.add('thud'); this.R.miss(k==='heavy'?'هذا خفيف، ارتفع للأعلى. الثقيل هو الذي نزل ⬇️':'هذا ثقيل، نزل للأسفل. الخفيف هو الذي ارتفع ⬆️'); $(`.it[data-k="${k}"]`).classList.add('glow'); } },
+  else { it.classList.remove('thud'); void it.offsetWidth; it.classList.add('thud'); this.R.miss(k==='heavy'?'هذا خفيف، ارتفع للأعلى. الثقيل هو الذي نزل ⬇️':'هذا ثقيل، نزل للأسفل. الخفيف هو الذي ارتفع ⬆️');
+   // the corrector: the scale comes back level and tips again slowly, then the right one shines
+   this.ready=false; const bm=$('#beam'); bm.style.transform='rotate(0deg)'; T.set(()=>{ Snd.play('whoosh'); bm.style.transform=`rotate(${this.hl?-13:13}deg)`; },1100); T.set(()=>{ Snd.play('thud'); this.ready=true; $(`.it[data-k="${k}"]`).classList.add('glow'); },2300); } },
  again(){ Speech.say(this.k==='heavy'?'أيهما ثقيل؟':'أيهما خفيف؟'); } };
 
 // 🎈🚚 the balloon only flies with light things; the truck carries the heavy ones
 const Balloon={ start(){ stage.className='sky'; this.R=run('balloon',5,'رحلة رائعة! 🎈🚚',R=>this.round(R)); this.R.go(); },
- round(R){ const W=innerWidth, H=innerHeight, items=shuffle([pick(HEAVY),pick(LIGHT)].concat([HEAVY,LIGHT].map(a=>pick(a))).map((x,i)=>({x,k:i%2?'light':'heavy'})).filter((v,i,a)=>a.findIndex(z=>z.x[0]===v.x[0])===i));
+ round(R){ const W=innerWidth, H=innerHeight, two=[{x:pick(HEAVY.slice(0,2)),k:'heavy'},{x:pick(LIGHT.slice(0,3)),k:'light'}], items=R.i===0?shuffle(two):shuffle([pick(HEAVY),pick(LIGHT)].concat([HEAVY,LIGHT].map(a=>pick(a))).map((x,i)=>({x,k:i%2?'light':'heavy'})).filter((v,i,a)=>a.findIndex(z=>z.x[0]===v.x[0])===i));
   this.left=items.length; this.alt=0;
   stage.innerHTML=`<div class="balloon" id="bal" style="right:${W*.08}px;top:${H*.14}px"><div class="env"></div><div class="ropes"></div><div class="basket" id="basket"></div></div><div class="truck" id="truck" style="left:${W*.04}px;top:${H*.56}px"><span class="tk">🚚</span><div class="bed" id="bed"></div></div><div class="shelf" style="left:${W*.3}px;width:${W*.4}px;top:${H*.8}px"></div>`;
   const n=items.length, sz=Math.min(90,W*.09); items.forEach((it,i)=>{ const e=obj(it.x[0],W*.3+(i+.5)*(W*.4/n)-sz/2,H*.8-sz*1.05,sz,'',stage); e.dataset.k=it.k; draggable(e,(x,y)=>this.drop(e,x,y)); if(aidOf('balloon')===0&&R.i===0) e.classList.add('glow'); });
-  setGoal(`<span>الخفيف في المنطاد 🎈 والثقيل في الشاحنة 🚚</span>${R.steps()}`); tip('اسحب كل شيء إلى مكانه ✋'); Speech.say('ضع الخفيف في المنطاد، والثقيل في الشاحنة'); },
+  setGoal(`<span>الخفيف في المنطاد 🎈 والثقيل في الشاحنة 🚚</span>${lvChip(R)}${R.steps()}`); tip('اسحب كل شيء إلى مكانه ✋'); Speech.say('ضع الخفيف في المنطاد، والثقيل في الشاحنة'); },
  drop(e,x,y){ const k=e.dataset.k, inB=hit(x,y,$('#basket'),60)||hit(x,y,$('#bal').querySelector('.env')), inT=hit(x,y,$('#truck'),20); if(!inB&&!inT) return false; const R=this.R;
   if(inB&&k==='light'){ e.remove(); $('#basket').insertAdjacentHTML('beforeend',`<span>${e.textContent}</span>`); this.alt++; $('#bal').style.transform=`translateY(${-this.alt*18}px)`; Snd.play('pop'); bigWord(WD.light,CL.light); return this.done(); }
   if(inT&&k==='heavy'){ e.remove(); $('#bed').insertAdjacentHTML('beforeend',`<span>${e.textContent}</span>`); const t=$('#truck'); t.classList.remove('thud'); void t.offsetWidth; t.classList.add('thud'); Snd.play('thud'); bigWord(WD.heavy,CL.heavy); return this.done(); }
-  if(inB){ const b=$('#bal'); b.classList.remove('thud'); void b.offsetWidth; b.classList.add('thud'); R.miss('ثقيل! المنطاد لا يطير بالثقيل. ضعه في الشاحنة 🚚'); }
-  else R.miss('خفيف! ضعه في المنطاد ليطير 🎈');
+  // the corrector shows what would happen: the balloon sinks with something heavy, and the right place lights up
+  if(inB){ const b=$('#bal'); b.style.transform=`translateY(${-this.alt*18+60}px)`; Snd.play('thud'); T.set(()=>b.style.transform=`translateY(${-this.alt*18}px)`,1000); R.miss('ثقيل! انظر، المنطاد ينزل. ضعه في الشاحنة 🚚'); $('#truck').classList.add('glow'); T.set(()=>$('#truck').classList.remove('glow'),3500); }
+  else { R.miss('خفيف! ضعه في المنطاد ليطير 🎈'); $('#basket').classList.add('glow'); T.set(()=>$('#basket').classList.remove('glow'),3500); }
   e.classList.add('glow'); return false; },
  done(){ this.left--; if(this.left>0) return true; T.set(()=>{ Snd.play('whoosh'); $('#bal').style.top='-60vh'; $('#truck').style.left='-60vw'; },500); this.R.win('خفيف وثقيل','#ff7a1a',2200); return true; },
  again(){ Speech.say('ضع الخفيف في المنطاد، والثقيل في الشاحنة'); } };
 
 // 🦸 the hero lifts: heavy makes him strain, light he juggles
 const Lift={ start(){ stage.className='yard'; this.seq=seq2('heavy','light',8); this.R=run('lift',8,'بطل الأثقال! 🦸',R=>this.round(R)); this.R.go(); },
- round(R){ const W=innerWidth, H=innerHeight, k=this.k=this.seq[R.i], it=this.it=pick(k==='heavy'?HEAVY:LIGHT);
+ round(R){ const W=innerWidth, H=innerHeight, k=this.k=this.seq[R.i], it=this.it=pick(k==='heavy'?(easy(R)?HEAVY.slice(0,2):HEAVY):(easy(R)?LIGHT.slice(0,3):LIGHT));
   stage.innerHTML=''; this.hero=obj('🦸',W/2-Math.min(105,W*.11),H*.38,null,'hero'); this.item=obj(it[0],W/2-50,-160,null,'lift'); T.set(()=>{ this.item.style.top=(H*.16)+'px'; Snd.play('whoosh'); },80);
-  setGoal(`<span>${it[1]}: ثقيل أم خفيف؟</span>${R.steps()}`); tip(''); Speech.say(it[1]+'، ثقيل أم خفيف؟');
+  setGoal(`<span>${it[1]}: ثقيل أم خفيف؟</span>${lvChip(R)}${R.steps()}`); tip(''); Speech.say(it[1]+'، ثقيل أم خفيف؟');
   opts([{v:'heavy',label:'ثقيل',em:'🏋️',color:CL.heavy},{v:'light',label:'خفيف',em:'🪶',color:CL.light}],(v,b)=>this.pick(v,b));
-  if(aidOf('lift')===0&&R.i<3) T.set(()=>{ const b=optBtn(k); if(b&&!R.busy) b.classList.add('hint'); },2500); },
+  if(aidOf('lift')===0||easy(R)) T.set(()=>{ const b=optBtn(k); if(b&&!R.busy) b.classList.add('hint'); },2500); },
  pick(v,b){ const R=this.R, k=this.k; if(R.busy) return;
   if(v===k){ closeOpts(); this.react(k); R.win(WD[k],CL[k],2200); }
   else { shake(b); this.react(k,true); R.miss(k==='heavy'?`ليس خفيفًا! انظر، البطل لا يستطيع رميه. ${this.it[1]} ثقيل.`:`ليس ثقيلًا! انظر، البطل يرميه بسهولة. ${this.it[1]} خفيف.`); optBtn(k).classList.add('hint'); } },

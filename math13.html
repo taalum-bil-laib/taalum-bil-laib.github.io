@@ -218,6 +218,10 @@ const starsFor=(f,t)=>f>=t*.85?3:f>=t*.6?2:1;
 const T={ids:[],set(f,ms){ const id=setTimeout(()=>{ T.ids=T.ids.filter(x=>x!==id); f(); },ms); T.ids.push(id); return id; },clear(){ T.ids.forEach(clearTimeout); T.ids=[]; }};
 // errorless order: the first kind alone, then the second, then mixed
 const seq2=(a,b,n)=>{ const s=[a,a,a,b,b,b]; while(s.length<(n||10)) s.push(rnd()<.5?a:b); return s; };
+// every activity climbs four steps, shown as a small tag beside the question
+const lvChip=R=>{ const L=[['سهل جدًا','#2e9d3a'],['سهل','#1e88e5'],['متوسط','#ff8a3d'],['تحدٍّ','#8e24aa']][Math.min(3,Math.floor(R.i/R.total*4))]; return `<span class="tag" style="background:${L[1]}">${L[0]}</span>`; };
+// the first rounds of every activity are helped, whatever the child did before
+const easy=R=>R.i<3;
 const aidOf=id=>{ const ok=(PR[id]&&PR[id].ok)||0; return ok<4?0:ok<10?1:2; };
 
 /* ---------- screens ---------- */
@@ -280,8 +284,6 @@ function beads(n,size,vertical){ const c=n===10?'#ffb300':MONT[n]; const b=`<i s
 // teen numbers: the golden ten bar plus the extra beads
 const teen=(n,size)=>n<=10?beads(n,size):`<span style="display:inline-flex;gap:6px;align-items:center">${beads(10,size)}${beads(n-10,size)}</span>`;
 const sayNum=n=>Speech.say(NNAME[n],.8);
-// every activity climbs four steps, shown as a small tag beside the question
-const lvChip=R=>{ const L=[['سهل جدًا','#2e9d3a'],['سهل','#1e88e5'],['متوسط','#ff8a3d'],['تحدٍّ','#8e24aa']][Math.min(3,Math.floor(R.i/R.total*4))]; return `<span class="tag" style="background:${L[1]}">${L[0]}</span>`; };
 // the error corrector: stop the game for a moment and count the things with the child, one by one
 css(`.cnthit{outline:4px solid #ffb300;outline-offset:2px;scale:1.25;transition:scale .15s}`);
 function countWith(G,els,done,from){ G.fix=true; els.forEach((e,k)=>T.set(()=>{ e.classList.add('cnthit'); Snd.play('pop'); Speech.say(NNAME[(from||0)+k+1],1.1); },k*650)); T.set(()=>{ els.forEach(e=>e.classList.remove('cnthit')); G.fix=false; if(done) done(); },els.length*650+350); }

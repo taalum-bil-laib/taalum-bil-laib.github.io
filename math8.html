@@ -218,6 +218,10 @@ const starsFor=(f,t)=>f>=t*.85?3:f>=t*.6?2:1;
 const T={ids:[],set(f,ms){ const id=setTimeout(()=>{ T.ids=T.ids.filter(x=>x!==id); f(); },ms); T.ids.push(id); return id; },clear(){ T.ids.forEach(clearTimeout); T.ids=[]; }};
 // errorless order: the first kind alone, then the second, then mixed
 const seq2=(a,b,n)=>{ const s=[a,a,a,b,b,b]; while(s.length<(n||10)) s.push(rnd()<.5?a:b); return s; };
+// every activity climbs four steps, shown as a small tag beside the question
+const lvChip=R=>{ const L=[['سهل جدًا','#2e9d3a'],['سهل','#1e88e5'],['متوسط','#ff8a3d'],['تحدٍّ','#8e24aa']][Math.min(3,Math.floor(R.i/R.total*4))]; return `<span class="tag" style="background:${L[1]}">${L[0]}</span>`; };
+// the first rounds of every activity are helped, whatever the child did before
+const easy=R=>R.i<3;
 const aidOf=id=>{ const ok=(PR[id]&&PR[id].ok)||0; return ok<4?0:ok<10?1:2; };
 
 /* ---------- screens ---------- */
@@ -291,14 +295,16 @@ const MCOL=['#1a3fb0','#00897b','#43a047','#7cb342','#fb8c00','#f4511e','#8e24aa
 
 // 🌞🌙 day or night?
 const DayNight={ start(){ stage.className='dn'; this.seq=seq2('day','night',10); this.R=run('daynight',10,'تعرف النهار والليل! 🌞🌙',R=>this.round(R)); this.R.go(); },
- round(R){ const W=innerWidth,H=innerHeight,k=this.k=this.seq[R.i],c=this.c=pick(k==='day'?DAY:NIGHT); stage.innerHTML='';
+ round(R){ const W=innerWidth,H=innerHeight,k=this.k=this.seq[R.i],c=this.c=easy(R)?(k==='day'?DAY[1]:NIGHT[0]):pick(k==='day'?DAY:NIGHT); stage.innerHTML='';
   obj('☀️',W*.84,H*.18,Math.min(H*.16,100),''); obj('☁️',W*.6,H*.26,60,''); obj('🌙',W*.08,H*.18,Math.min(H*.15,90),''); obj('⭐',W*.3,H*.3,34,''); obj('⭐',W*.18,H*.45,26,''); obj('✨',W*.38,H*.5,28,'');
   h('div',{class:'half',style:`left:75%;background:#ff9f1c`},'النهار ☀️',stage); h('div',{class:'half',style:`left:25%;background:#3949ab`},'الليل 🌙',stage);
   const cd=this.cd=h('div',{class:'card2'},`<span class="em">${c[0]}</span><span>${c[1]}</span>`,stage); cd.style.left=(W/2-110)+'px'; cd.style.top=(H*.56)+'px'; draggable(cd,(x)=>this.drop(x));
-  this.q='متى؟ في النهار أم في الليل؟'; setGoal(`<span>${c[1]}: نهار أم ليل؟</span>${R.steps()}`); tip('اسحب البطاقة إلى النهار أو الليل ✋'); Speech.say(c[1]+'، في النهار أم في الليل؟'); },
+  this.q='متى؟ في النهار أم في الليل؟'; setGoal(`<span>${c[1]}: نهار أم ليل؟</span>${lvChip(R)}${R.steps()}`); tip('اسحب البطاقة إلى النهار أو الليل ✋'); Speech.say(c[1]+'، في النهار أم في الليل؟'); },
  drop(x){ const R=this.R, side=x>innerWidth/2?'day':'night'; if(Math.abs(x-innerWidth/2)<40) return false;
   if(side===this.k){ this.cd.classList.remove('drag'); R.win(side==='day'?'نهار':'ليل',side==='day'?'#ff9f1c':'#3949ab'); return true; }
-  R.miss(this.k==='day'?`${this.c[1]}… هذا يكون في النهار ☀️`:`${this.c[1]}… هذا يكون في الليل 🌙`); return false; },
+  R.miss(this.k==='day'?`${this.c[1]}… هذا يكون في النهار ☀️`:`${this.c[1]}… هذا يكون في الليل 🌙`);
+  // the corrector: the right half shines and the card points the way
+  const hf=$$('.half')[this.k==='day'?0:1]; if(hf){ hf.classList.add('glow'); T.set(()=>hf.classList.remove('glow'),3500); } const cd=this.cd; T.set(()=>{ cd.style.transition='transform .5s'; cd.style.transform=`translateX(${this.k==='day'?90:-90}px)`; },300); T.set(()=>{ cd.style.transform=''; },1300); T.set(()=>{ cd.style.transition=''; },1850); return false; },
  again(){ Speech.say(this.c[1]+'، في النهار أم في الليل؟'); } };
 
 // 🚂 the week train: الأحد first, then in order
@@ -307,8 +313,8 @@ const Week={ start(){ stage.className='sky'; this.n=0; this.R=run('week',7,'قط
   const s=el('svg',{class:'road',viewBox:`0 0 ${W} ${H}`},stage); el('rect',{x:0,y:ty+wh+12,width:W,height:10,fill:'#6d4c41'},s);
   const ex=this.ex=W-ww*1.25-10; obj('🚂',ex,ty+wh-ww*1.05,ww*1.15,''); this.slots=DAYS.map((d,i)=>{ const e=h('div',{class:'slot'},'',stage); e.style.cssText+=`left:${ex-(i+1)*(ww+6)}px;top:${ty}px;width:${ww}px;height:${wh}px`; return e; });
   const order=shuffle(DAYS.map((d,i)=>i)); this.wag=order.map((i,j)=>{ const w=h('div',{class:'wagon','data-i':i},`<span class="wi">${dIcon(i)}</span><span>${DAYS[i]}</span>`,stage); w.style.cssText+=`background:${WCOL[i]};width:${ww}px;height:${wh}px;font-size:${Math.min(20,ww/5.2)}px;left:${W*.06+(j%4)*(W*.22)}px;top:${H*.6+((j/4)|0)*(wh+26)}px`; draggable(w,(x,y)=>this.drop(w,x,y)); return w; }); },
- round(R){ const i=R.i; this.need=i; const nd=DAYS[i]; this.q=i===0?'الأسبوع يبدأ بيوم الأحد. أين عربة الأحد؟':`بعد ${DAYS[i-1]} يأتي…`; setGoal(`<span>${i===0?'أول أيام الأسبوع؟':'بعد '+DAYS[i-1]+'؟'}</span>${R.steps()}`); tip('اسحب العربة إلى القطار ✋'); Speech.say(this.q);
-  this.slots.forEach((s,j)=>s.style.borderColor=j===i?'#ffd75e':''); if(aidOf('week')===0) T.set(()=>{ const w=this.wag.find(z=>+z.dataset.i===i); if(w&&!R.busy) w.classList.add('glow'); },2600); },
+ round(R){ const i=R.i; this.need=i; const nd=DAYS[i]; const span=i<2?1:i<4?2:6; this.wag.forEach(w=>{ const m=+w.dataset.i; if(m>=i) w.style.visibility=m<=i+span?'':'hidden'; }); this.q=i===0?'الأسبوع يبدأ بيوم الأحد. أين عربة الأحد؟':`بعد ${DAYS[i-1]} يأتي…`; setGoal(`<span>${i===0?'أول أيام الأسبوع؟':'بعد '+DAYS[i-1]+'؟'}</span>${lvChip(R)}${R.steps()}`); tip('اسحب العربة إلى القطار ✋'); Speech.say(this.q);
+  this.slots.forEach((s,j)=>s.style.borderColor=j===i?'#ffd75e':''); if(aidOf('week')===0||easy(R)) T.set(()=>{ const w=this.wag.find(z=>+z.dataset.i===i); if(w&&!R.busy) w.classList.add('glow'); },2600); },
  drop(w,x,y){ const R=this.R,i=+w.dataset.i,s=this.slots[this.need]; if(!hit(x,y,s,40)&&!this.slots.some(z=>hit(x,y,z,10))) return false;
   if(i===this.need){ const r=s.getBoundingClientRect(); place(w,r.left,r.top); w.classList.remove('drag','glow'); s.style.display='none'; Snd.play('place');
    if(this.need===6){ T.set(()=>{ Snd.play('whistle'); [...this.wag].forEach(z=>z.style.transition='left 2s ease-in'); },900); }
@@ -322,13 +328,13 @@ const Today={ start(){ stage.className='room'; this.kinds=['today','tomorrow','t
   if(kind==='today'||kind==='tomorrow'){ const cal=h('div',{class:'cal'},`<div class="ct">اليوم</div><div class="cd">${DAYS[d]}</div>`,stage); cal.style.top=(H*.2)+'px';
    if(a<2){ const st=h('div',{class:'strip'},DAYS.map((x,i)=>`<i class="${i===d?'td':''} ${kind==='tomorrow'&&a===0&&i===(d+1)%7?'tm':''}">${x}</i>`).join(''),stage); st.style.top=(H*.56)+'px'; }
    ans=kind==='today'?DAYS[d]:DAYS[(d+1)%7]; q=kind==='today'?'ما اليوم؟':`اليوم ${DAYS[d]}. ما غدًا؟`;
-   const set=new Set([ans]); while(set.size<3) set.add(pick(DAYS)); list=shuffle([...set]).map((v,i)=>({v,label:v,color:WCOL[DAYS.indexOf(v)]})); }
+   const set=new Set([ans]); while(set.size<(easy(R)?2:3)) set.add(pick(DAYS)); list=shuffle([...set]).map((v,i)=>({v,label:v,color:WCOL[DAYS.indexOf(v)]})); }
   else if(kind==='school'){ const dd=pick([0,1,2,3,4,5,6]); this.d=dd; q=`هل نذهب إلى المدرسة يوم ${DAYS[dd]}؟`; ans=dd<5?'نعم':'لا'; obj(dIcon(dd),W/2-60,H*.24,120,''); list=[{v:'نعم',label:'نعم',em:'🎒',color:'#43a047'},{v:'لا',label:'لا، عطلة',em:'🏠',color:'#e53935'}]; }
   else { q='في أي يوم نصلّي صلاة الجمعة؟'; ans='الجمعة'; obj('🕌',W/2-60,H*.24,120,''); const set=new Set([ans,pick(DAYS),pick(DAYS)]); while(set.size<3) set.add(pick(DAYS)); list=shuffle([...set]).map(v=>({v,label:v,color:WCOL[DAYS.indexOf(v)]})); }
-  this.ans=ans; this.q=q; setGoal(`<span>${q}</span>${R.steps()}`); tip(''); Speech.say(q); opts(list,(v,b)=>this.pick(v,b));
+  this.ans=ans; this.q=q; setGoal(`<span>${q}</span>${lvChip(R)}${R.steps()}`); tip(''); Speech.say(q); opts(list,(v,b)=>this.pick(v,b));
   if(a===0&&R.i<5) T.set(()=>{ const b=optBtn(ans); if(b&&!R.busy) b.classList.add('hint'); },3000); },
  pick(v,b){ const R=this.R; if(R.busy) return; if(v===this.ans){ closeOpts(); R.win(this.ans,'#ff7a1a'); return; }
-  shake(b); const k=this.kind, d=this.d; R.miss(k==='today'?`انظر إلى التقويم: اليوم ${DAYS[d]}.`:k==='tomorrow'?`بعد ${DAYS[d]} يأتي ${DAYS[(d+1)%7]}.`:k==='school'?(d<5?`نذهب إلى المدرسة من الأحد إلى الخميس.`:`${DAYS[d]} عطلة؛ لا مدرسة.`):'صلاة الجمعة يوم الجمعة 🕌'); optBtn(this.ans).classList.add('hint'); },
+  shake(b); const k=this.kind, d=this.d; if(k==='tomorrow'&&!$('.strip')){ const st=h('div',{class:'strip'},DAYS.map((x,i)=>`<i class="${i===d?'td':''} ${i===(d+1)%7?'tm':''}">${x}</i>`).join(''),stage); st.style.top=(innerHeight*.56)+'px'; } else $$('.strip i').forEach((e,i)=>{ if(k==='tomorrow'&&i===(d+1)%7) e.classList.add('tm'); }); R.miss(k==='today'?`انظر إلى التقويم: اليوم ${DAYS[d]}.`:k==='tomorrow'?`بعد ${DAYS[d]} يأتي ${DAYS[(d+1)%7]}.`:k==='school'?(d<5?`نذهب إلى المدرسة من الأحد إلى الخميس.`:`${DAYS[d]} عطلة؛ لا مدرسة.`):'صلاة الجمعة يوم الجمعة 🕌'); optBtn(this.ans).classList.add('hint'); },
  again(){ Speech.say(this.q); } };
 
 // 🌙 the months necklace: مُحرّم first … ذو الحجة last
@@ -340,7 +346,7 @@ const Months={ start(){ stage.className='dn'; stage.style.background='linear-gra
   this.slots=pts.map(([x,y])=>{ const e=h('div',{class:'bslot'},'',stage); e.style.cssText+=`left:${x-bs/2}px;top:${y-bs/2}px;width:${bs}px;height:${bs}px`; return e; }); this.pool=[]; },
  bead(i){ const bs=this.bs, e=h('div',{class:'bead','data-i':i},`<span style="font-size:${Math.max(11,bs/6.2)}px">${MICON[i]?MICON[i]+'<br>':''}${MONTHS[i]}</span>`,stage); e.style.cssText+=`width:${bs}px;height:${bs}px;background:${MCOL[i]}`; return e; },
  round(R){ const W=innerWidth,H=innerHeight,i=R.i; if(i%6===0){ this.pool.forEach(e=>e.remove()); const grp=[0,1,2,3,4,5].map(x=>x+i); this.pool=shuffle(grp).map((m,j)=>{ const e=this.bead(m); place(e,W*.12+j*(W*.76/6),H*.8); draggable(e,(x,y)=>this.drop(e,x,y)); return e; }); }
-  this.need=i; this.slots.forEach((s,j)=>s.style.borderColor=j===i?'#ffd75e':''); this.q=i===0?'أول شهور السنة الهجرية: مُحرّم':`بعد ${MONTHS[i-1]} يأتي…`; setGoal(`<span>${i===0?'أول شهر في السنة؟':'بعد '+MONTHS[i-1]+'؟'}</span>${R.steps()}`); tip('اسحب الخرزة إلى العقد ✋'); Speech.say(this.q);
+  this.need=i; const span=i<2?1:i<4?2:5; this.pool.forEach(e=>{ const m=+e.dataset.i; if(m>=i) e.style.visibility=m<=i+span?'':'hidden'; }); this.slots.forEach((s,j)=>s.style.borderColor=j===i?'#ffd75e':''); this.q=i===0?'أول شهور السنة الهجرية: مُحرّم':`بعد ${MONTHS[i-1]} يأتي…`; setGoal(`<span>${i===0?'أول شهر في السنة؟':'بعد '+MONTHS[i-1]+'؟'}</span>${lvChip(R)}${R.steps()}`); tip('اسحب الخرزة إلى العقد ✋'); Speech.say(this.q);
   if(aidOf('months')===0) T.set(()=>{ const e=this.pool.find(z=>+z.dataset.i===i); if(e&&!R.busy) e.classList.add('glow'); },2800); },
  drop(e,x,y){ const R=this.R,i=+e.dataset.i,s=this.slots[this.need]; if(!this.slots.some(z=>hit(x,y,z,30))) return false;
   if(i===this.need){ const r=s.getBoundingClientRect(); place(e,r.left,r.top); e.classList.remove('drag','glow'); Snd.play('place'); R.win(MONTHS[i],MCOL[i],1300); return true; }
@@ -351,7 +357,7 @@ const Months={ start(){ stage.className='dn'; stage.style.background='linear-gra
 const MQ=[['في أي شهر نصوم؟','رمضان','🏮'],['عيد الفطر في شهر…','شوال','🎉'],['الحج وعيد الأضحى في شهر…','ذو الحجة','🕋'],['أول شهور السنة الهجرية؟','مُحرّم','🌙'],['آخر شهور السنة الهجرية؟','ذو الحجة','📿'],['الشهر الذي قبل رمضان؟','شعبان','🌙']];
 const MonthQ={ start(){ stage.className='sky'; this.qs=shuffle(MQ.slice()); this.R=run('mquiz',6,'تعرف الشهور! 🏮',R=>this.round(R)); this.R.go(); },
  round(R){ const W=innerWidth,H=innerHeight,[q,ans,em]=this.qs[R.i]; stage.innerHTML=''; obj(em,W/2-70,H*.22,140,''); this.q=q; this.ans=ans;
-  const set=new Set([ans]); while(set.size<3) set.add(pick(MONTHS)); setGoal(`<span>${q}</span>${R.steps()}`); tip(''); Speech.say(q);
+  const set=new Set([ans]); while(set.size<(easy(R)?2:3)) set.add(pick(MONTHS)); setGoal(`<span>${q}</span>${lvChip(R)}${R.steps()}`); tip(''); Speech.say(q);
   opts(shuffle([...set]).map(v=>({v,label:v,color:MCOL[MONTHS.indexOf(v)]})),(v,b)=>this.pick(v,b)); if(aidOf('mquiz')===0) T.set(()=>{ const b=optBtn(ans); if(b&&!R.busy) b.classList.add('hint'); },3200); },
  pick(v,b){ const R=this.R; if(R.busy) return; if(v===this.ans){ closeOpts(); R.win(this.ans,MCOL[MONTHS.indexOf(this.ans)]); return; } shake(b); R.miss(`الجواب: ${this.ans}`); optBtn(this.ans).classList.add('hint'); },
  again(){ Speech.say(this.q); } };

@@ -218,6 +218,10 @@ const starsFor=(f,t)=>f>=t*.85?3:f>=t*.6?2:1;
 const T={ids:[],set(f,ms){ const id=setTimeout(()=>{ T.ids=T.ids.filter(x=>x!==id); f(); },ms); T.ids.push(id); return id; },clear(){ T.ids.forEach(clearTimeout); T.ids=[]; }};
 // errorless order: the first kind alone, then the second, then mixed
 const seq2=(a,b,n)=>{ const s=[a,a,a,b,b,b]; while(s.length<(n||10)) s.push(rnd()<.5?a:b); return s; };
+// every activity climbs four steps, shown as a small tag beside the question
+const lvChip=R=>{ const L=[['سهل جدًا','#2e9d3a'],['سهل','#1e88e5'],['متوسط','#ff8a3d'],['تحدٍّ','#8e24aa']][Math.min(3,Math.floor(R.i/R.total*4))]; return `<span class="tag" style="background:${L[1]}">${L[0]}</span>`; };
+// the first rounds of every activity are helped, whatever the child did before
+const easy=R=>R.i<3;
 const aidOf=id=>{ const ok=(PR[id]&&PR[id].ok)||0; return ok<4?0:ok<10?1:2; };
 
 /* ---------- screens ---------- */
@@ -292,23 +296,24 @@ function spot(k,T,s){ const cx=T.x+T.w/2; if(k==='up') return [cx-s/2,T.y-s*.95,
 const Where={ start(){ stage.className='room'; this.ks=['up','down','up','down','front','back','front','back'].concat(shuffle(['up','down','front','back','up','back'])); this.R=run('where',14,'أحسنت يا محقق! 🐱',R=>this.round(R)); this.R.go(); },
  round(R){ const k=this.k=this.ks[R.i], p=this.p=pick(PETS); stage.innerHTML=''; const fb=k==='front'||k==='back', T=fb?box():table(), s=Math.min(innerHeight*.17,110), [x,y,sz,z]=fb?spotBox(k,T,s):spot(k,T,s); const o=obj(p[0],x,y,sz,''); o.style.zIndex=z; this.ref=fb?'الصندوق':'الطاولة';
   const set=R.i<4?['up','down']:R.i<8?['front','back']:['up','down','front','back']; this.q=`أين ${p[1]}؟`;
-  setGoal(`<span>${this.q}</span>${R.steps()}`); tip(''); Speech.say(this.q);
+  setGoal(`<span>${this.q}</span>${lvChip(R)}${R.steps()}`); tip(''); Speech.say(this.q);
   opts(set.map(v=>({v,label:DIR[v][0],em:mini(v),color:DIR[v][1]})),(v,b)=>this.pick(v,b));
-  if(aidOf('where')===0&&R.i<6) T2(()=>{ const b=optBtn(k); if(b&&!R.busy) b.classList.add('hint'); },2800); },
- pick(v,b){ const R=this.R,k=this.k; if(R.busy) return; if(v===k){ closeOpts(); R.win(DIR[k][0],DIR[k][1]); } else { shake(b); R.miss(`انظر جيدًا: ${this.p[1]} ليس ${DIR[v][0]} ${this.ref}.`); optBtn(k).classList.add('hint'); } },
+  if(aidOf('where')===0&&R.i<6||easy(R)) T2(()=>{ const b=optBtn(k); if(b&&!R.busy) b.classList.add('hint'); },2800); },
+ pick(v,b){ const R=this.R,k=this.k; if(R.busy) return; if(v===k){ closeOpts(); R.win(DIR[k][0],DIR[k][1]); } else { shake(b); R.miss(`انظر جيدًا: ${this.p[1]} ${DIR[k][0]} ${this.ref} 👀`); const o=$$('.obj').pop(); if(o){ o.classList.remove('glow'); void o.offsetWidth; o.classList.add('glow'); } optBtn(k).classList.add('hint'); } },
  again(){ Speech.say(this.q); } };
 const T2=(f,ms)=>T.set(f,ms);
 
 // ✋ put it in its place: فوق / تحت / أمام الطاولة
 const Put={ start(){ stage.className='room'; this.ks=['up','down','up','down','front','up','front','down','front','up']; this.R=run('put',10,'كل شيء في مكانه! ✋',R=>this.round(R)); this.R.go(); },
  round(R){ const k=this.k=this.ks[R.i], p=this.p=pick(PETS); stage.innerHTML=''; const T=this.T=table(), s=this.s=Math.min(innerHeight*.16,100), W=innerWidth,H=innerHeight;
-  if(aidOf('put')<2){ const [x,y,sz]=spot(k,T,s); const z=h('div',{class:'zone on'},'',stage); z.style.cssText+=`left:${x-14}px;top:${y-14}px;width:${sz+28}px;height:${sz+28}px;z-index:1`; }
+  this.showZone=()=>{ const [x,y,sz]=spot(k,T,s); const z=h('div',{class:'zone on'},'',stage); z.style.cssText+=`left:${x-14}px;top:${y-14}px;width:${sz+28}px;height:${sz+28}px;z-index:1`; };
+  if(R.i<5) this.showZone();
   this.o=draggable(obj(p[0],W*.06,H*.72,s,''),(x,y)=>this.drop(x,y)); this.o.style.zIndex=5;
-  this.q=`ضع ${p[1]} ${DIR[k][0]} الطاولة`; setGoal(`<span>${this.q}</span>${tagD(k)}${R.steps()}`); tip('اسحب ✋'); Speech.say(this.q); },
+  this.q=`ضع ${p[1]} ${DIR[k][0]} الطاولة`; setGoal(`<span>${this.q}</span>${tagD(k)}${lvChip(R)}${R.steps()}`); tip('اسحب ✋'); Speech.say(this.q); },
  where(x,y){ const T=this.T; const inX=x>T.x-20&&x<T.x+T.w+20; if(!inX) return null; if(y<T.y+T.th*.5&&y>T.y-this.s*1.6) return 'up'; if(y>T.y+T.th&&y<T.y+T.ht) return 'down'; if(y>=T.y+T.ht&&y<T.y+T.ht+this.s*1.6) return 'front'; return null; },
  drop(x,y){ const R=this.R,k=this.k,w=this.where(x,y); if(!w){ return false; }
   if(w===k){ const [px,py,sz,z]=spot(k,this.T,this.s); place(this.o,px,py,sz); this.o.style.zIndex=z; this.o.classList.remove('drag'); R.win(DIR[k][0],DIR[k][1]); return true; }
-  R.miss(`هذا ${DIR[w][0]} الطاولة! ضعه ${DIR[k][0]} الطاولة.`); return false; },
+  R.miss(`هذا ${DIR[w][0]} الطاولة! ضعه ${DIR[k][0]} الطاولة، في المكان المضيء.`); if(!$('.zone')) this.showZone(); return false; },
  again(){ Speech.say(this.q); } };
 
 // 🚗 drive: turn right or left (the student's own right and left)
@@ -320,17 +325,18 @@ const Drive={ start(){ stage.className='cityroad'; this.seq=seq2('right','left',
   el('line',{x1:W/2,y1:jy+rw/2,x2:W/2,y2:H,stroke:'#ffd75e','stroke-width':5,'stroke-dasharray':'22 18'},s); el('line',{x1:0,y1:jy,x2:W,y2:jy,stroke:'#ffd75e','stroke-width':5,'stroke-dasharray':'22 18'},s);
   const pl=shuffle(PLACES.slice()), tgt=this.tgt=pl[0], oth=pl[1], icon=Math.min(H*.16,96);
   obj(k==='right'?tgt[0]:oth[0],W-icon-14,jy-rw/2-icon-6,icon,'');  obj(k==='left'?tgt[0]:oth[0],14,jy-rw/2-icon-6,icon,'');
-  if(a===0){ const sg=obj(k==='right'?'➡️':'⬅️',W/2-32,jy-rw/2-80,64,'sign'); sg.classList.add('arrow'); sg.style.setProperty('--ax',k==='right'?'14px':'-14px'); }
+  this.sign=()=>{ const sg=obj(k==='right'?'➡️':'⬅️',W/2-32,jy-rw/2-80,64,'sign'); sg.classList.add('arrow'); sg.style.setProperty('--ax',k==='right'?'14px':'-14px'); };
+  if(a===0||R.i<4) this.sign();
   const car=this.car=h('div',{class:'car'},`<svg viewBox="0 0 64 104" width="64" height="104"><rect x="4" y="4" width="56" height="96" rx="18" fill="#e53935"/><rect x="12" y="20" width="40" height="22" rx="6" fill="#9fd8ff"/><rect x="12" y="66" width="40" height="18" rx="6" fill="#9fd8ff"/><rect x="0" y="16" width="6" height="18" rx="2" fill="#222"/><rect x="58" y="16" width="6" height="18" rx="2" fill="#222"/><rect x="0" y="72" width="6" height="18" rx="2" fill="#222"/><rect x="58" y="72" width="6" height="18" rx="2" fill="#222"/><circle cx="16" cy="6" r="4" fill="#fff6c0"/><circle cx="48" cy="6" r="4" fill="#fff6c0"/></svg>`,stage);
   car.style.left=(W/2-32)+'px'; car.style.top=(H*.56)+'px';
-  this.q=`انعطف ${k==='right'?'يمينًا':'يسارًا'} إلى ${tgt[1]}`; setGoal(`<span>${this.q}</span>${tagD(k)}${R.steps()}`); tip(''); Speech.say(this.q);
+  this.q=`انعطف ${k==='right'?'يمينًا':'يسارًا'} إلى ${tgt[1]}`; setGoal(`<span>${this.q}</span>${tagD(k)}${lvChip(R)}${R.steps()}`); tip(''); Speech.say(this.q);
   opts([{v:'left',label:'يسار',em:'⬅️',color:DIR.left[1]},{v:'right',label:'يمين',em:'➡️',color:DIR.right[1]}],(v,b)=>this.pick(v,b)); $('#opts').style.direction='ltr';
   if(a<2&&R.i<6) T.set(()=>{ const b=optBtn(k); if(b&&!R.busy) b.classList.add('hint'); },2600); },
  pick(v,b){ const R=this.R,k=this.k; if(R.busy||this.busy) return; this.busy=true; const car=this.car,W=innerWidth;
   car.style.top=(this.jy-52)+'px'; Snd.play('chug');
   T.set(()=>{ car.style.transform=`rotate(${v==='right'?90:-90}deg)`; car.style.left=(v==='right'?W-150:86)+'px'; },1100);
   if(v===k) T.set(()=>{ Snd.play('cheer'); closeOpts(); R.win(k==='right'?'يمين':'يسار',DIR[k][1]); },2300);
-  else { shake(b); T.set(()=>{ R.miss(`هذا ${DIR[v][0]}! ${this.tgt[1]} في جهة ال${DIR[k][0]}.`); car.style.transition='none'; car.style.transform=''; car.style.left=(W/2-32)+'px'; car.style.top=(innerHeight*.56)+'px'; void car.offsetWidth; car.style.transition=''; optBtn(k).classList.add('hint'); this.busy=false; },2300); } },
+  else { shake(b); T.set(()=>{ R.miss(`هذا ${DIR[v][0]}! ${this.tgt[1]} في جهة ال${DIR[k][0]}.`); car.style.transition='none'; car.style.transform=''; car.style.left=(W/2-32)+'px'; car.style.top=(innerHeight*.56)+'px'; void car.offsetWidth; car.style.transition=''; if(!$('.sign')) this.sign(); optBtn(k).classList.add('hint'); this.busy=false; },2300); } },
  again(){ Speech.say(this.q); } };
 
 const ACTS=[

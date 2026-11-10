@@ -218,6 +218,10 @@ const starsFor=(f,t)=>f>=t*.85?3:f>=t*.6?2:1;
 const T={ids:[],set(f,ms){ const id=setTimeout(()=>{ T.ids=T.ids.filter(x=>x!==id); f(); },ms); T.ids.push(id); return id; },clear(){ T.ids.forEach(clearTimeout); T.ids=[]; }};
 // errorless order: the first kind alone, then the second, then mixed
 const seq2=(a,b,n)=>{ const s=[a,a,a,b,b,b]; while(s.length<(n||10)) s.push(rnd()<.5?a:b); return s; };
+// every activity climbs four steps, shown as a small tag beside the question
+const lvChip=R=>{ const L=[['سهل جدًا','#2e9d3a'],['سهل','#1e88e5'],['متوسط','#ff8a3d'],['تحدٍّ','#8e24aa']][Math.min(3,Math.floor(R.i/R.total*4))]; return `<span class="tag" style="background:${L[1]}">${L[0]}</span>`; };
+// the first rounds of every activity are helped, whatever the child did before
+const easy=R=>R.i<3;
 const aidOf=id=>{ const ok=(PR[id]&&PR[id].ok)||0; return ok<4?0:ok<10?1:2; };
 
 /* ---------- screens ---------- */
@@ -289,7 +293,7 @@ function Sorter(id,mode,title){ return { start(){ stage.className='factory'; thi
   if(mode==='shape') return shuffle(SHAPES.slice()).slice(0,n).map(s=>({v:s[0],label:s[0],sample:shapeSVG(s[1],'#90a4ae',30)}));
   if(mode==='size'){ const bh=Math.min(innerHeight*.24,150); return shuffle([{v:'كبير',label:'كبير',sample:'<span style="font-size:30px">🍎</span>',w:Math.min(innerWidth*.26,230),h:bh},{v:'صغير',label:'صغير',sample:'<span style="font-size:16px">🍎</span>',w:Math.min(innerWidth*.14,120),h:bh*.6}]); }
   return shuffle(CATS.slice()).slice(0,n).map(c=>({v:c[0],label:c[0],sample:`<span style="font-size:26px">${c[1]}</span>`,items:c[2]})); },
- round(R){ const n=mode==='size'?2:(R.i<5?2:3); if(n!==this.nb) this.build(n); const W=innerWidth,H=innerHeight, b=pick(this.bins); this.ans=b.v; let html, sz=Math.min(H*.17,110), word=b.v;
+ round(R){ const n=mode==='size'?2:(R.i<4?2:R.i<8?3:4); if(n!==this.nb) this.build(n); const W=innerWidth,H=innerHeight, b=pick(this.bins); this.ans=b.v; let html, sz=Math.min(H*.17,110), word=b.v;
   if(mode==='color'){ const c=COLS.find(x=>x[0]===b.v); html=shapeSVG(pick(SHAPES)[1],c[1],sz); }
   else if(mode==='shape'){ const s=SHAPES.find(x=>x[0]===b.v); html=shapeSVG(s[1],pick(COLS)[1],sz); }
   else if(mode==='size'){ const big=b.v==='كبير'; sz=big?Math.min(H*.22,140):Math.min(H*.09,56); html=pick(BIGSMALL); }
@@ -297,11 +301,13 @@ function Sorter(id,mode,title){ return { start(){ stage.className='factory'; thi
   const it=h('div',{class:'item obj'},html,stage); it.style.fontSize=sz+'px'; it.style.top=(H*.36-sz*.92)+'px'; it.style.left=(W+20)+'px'; T.set(()=>{ it.style.left=(W/2-sz/2)+'px'; Snd.play('chug'); },60);
   this.it=it; draggable(it,(x,y)=>this.drop(x,y));
   const q={color:'ضع الشكل في سلة لونه',shape:'ضع الشكل في سلة شكله',size:'ضع الشيء في السلة المناسبة لحجمه',type:'ضع الشيء في سلة نوعه'}[mode]; this.q=q;
-  setGoal(`<span>${q}</span>${R.steps()}`); tip('اسحب ✋'); if(R.i===0) Speech.say(q);
-  if(aidOf(id)===0&&R.i<4) T.set(()=>{ const e=this.bins.find(x=>x.v===this.ans); if(e&&!R.busy) e.el.classList.add('hint'); },2600); },
+  setGoal(`<span>${q}</span>${lvChip(R)}${R.steps()}`); tip('اسحب ✋'); if(R.i===0) Speech.say(q);
+  if(aidOf(id)===0&&R.i<4||easy(R)) T.set(()=>{ const e=this.bins.find(x=>x.v===this.ans); if(e&&!R.busy) e.el.classList.add('hint'); },2600); },
  drop(x,y){ const R=this.R, b=this.bins.find(z=>hit(x,y,z.el,24)); if(!b) return false; this.bins.forEach(z=>z.el.classList.remove('hint'));
   if(b.v===this.ans){ const it=this.it; it.remove(); const mini=h('span',{},mode==='size'||mode==='type'?it.innerHTML:it.innerHTML.replace(/width="\d+" height="\d+"/,'width="22" height="22"'),b.el.querySelector('.in')); if(mode==='size') mini.style.fontSize=(b.v==='كبير'?'30px':'14px'); Snd.play('place'); b.el.classList.remove('bump'); void b.el.offsetWidth; b.el.classList.add('bump'); R.win(b.v,'#ff7a1a',1300); return true; }
-  R.miss(`ليست هذه سلته! هذا ${mode==='size'?'شيء '+this.ans:this.ans}، ضعه في سلة «${this.ans}».`); const c=this.bins.find(z=>z.v===this.ans); c.el.classList.add('hint'); return false; },
+  R.miss(`ليست هذه سلته! هذا ${mode==='size'?'شيء '+this.ans:this.ans}، ضعه في سلة «${this.ans}».`); const c=this.bins.find(z=>z.v===this.ans); c.el.classList.add('hint');
+  // the corrector: the item floats over its own basket for a moment, then comes back to the belt for the child to move
+  const it=this.it, r=c.el.getBoundingClientRect(), ox=it.style.left, oy=it.style.top; T.set(()=>{ it.style.transition='left .6s,top .6s'; it.style.left=(r.left+r.width/2-it.offsetWidth/2)+'px'; it.style.top=(r.top-it.offsetHeight-10)+'px'; },420); T.set(()=>{ it.style.left=ox; it.style.top=oy; },1700); T.set(()=>{ it.style.transition=''; },2350); return false; },
  again(){ Speech.say(this.q); } }; }
 
 const ACTS=[

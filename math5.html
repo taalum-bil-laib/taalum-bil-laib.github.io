@@ -218,6 +218,10 @@ const starsFor=(f,t)=>f>=t*.85?3:f>=t*.6?2:1;
 const T={ids:[],set(f,ms){ const id=setTimeout(()=>{ T.ids=T.ids.filter(x=>x!==id); f(); },ms); T.ids.push(id); return id; },clear(){ T.ids.forEach(clearTimeout); T.ids=[]; }};
 // errorless order: the first kind alone, then the second, then mixed
 const seq2=(a,b,n)=>{ const s=[a,a,a,b,b,b]; while(s.length<(n||10)) s.push(rnd()<.5?a:b); return s; };
+// every activity climbs four steps, shown as a small tag beside the question
+const lvChip=R=>{ const L=[['سهل جدًا','#2e9d3a'],['سهل','#1e88e5'],['متوسط','#ff8a3d'],['تحدٍّ','#8e24aa']][Math.min(3,Math.floor(R.i/R.total*4))]; return `<span class="tag" style="background:${L[1]}">${L[0]}</span>`; };
+// the first rounds of every activity are helped, whatever the child did before
+const easy=R=>R.i<3;
 const aidOf=id=>{ const ok=(PR[id]&&PR[id].ok)||0; return ok<4?0:ok<10?1:2; };
 
 /* ---------- screens ---------- */
@@ -282,11 +286,11 @@ function road(){ const W=innerWidth,H=innerHeight, s=el('svg',{class:'road',view
 const Kick={ start(){ stage.className='field'; this.seq=seq2('near','far',8); this.R=run('kick',8,'هدّاف رائع! ⚽',R=>this.round(R)); this.R.go(); },
  round(R){ const W=innerWidth,H=innerHeight,k=this.k=this.seq[R.i],nl=rnd()<.5; stage.innerHTML=''; this.busy=false;
   const goal=(x,y,w,kind)=>{ const e=h('div',{class:'goalpost','data-k':kind},'',stage); e.style.cssText+=`left:${x}px;top:${y}px;width:${w}px;height:${w*.42}px;border-width:${Math.max(3,w*.025)}px`; return e; };
-  const nw=Math.min(W*.34,420), fw=nw*.3;
+  const nw=Math.min(W*.34,420), fw=nw*(R.i<3?.24:R.i<6?.34:.46);
   this.g={near:goal(nl?W*.06:W*.94-nw,H*.5,nw,'near'),far:goal(nl?W*.7:W*.3-fw,H*.27,fw,'far')};
   this.ball=obj('⚽',W/2-35,H*.8,70,'ball');
-  setGoal(`<span>اركل الكرة إلى المرمى ال${WD[k]}</span>${tagW(k)}${R.steps()}`); tip('اضغط على المرمى ⚽'); this.again();
-  if(aidOf('kick')===0&&R.i<4) T.set(()=>{ if(!R.busy) this.g[k].classList.add('glow'); },2400); },
+  setGoal(`<span>اركل الكرة إلى المرمى ال${WD[k]}</span>${tagW(k)}${lvChip(R)}${R.steps()}`); tip('اضغط على المرمى ⚽'); this.again();
+  if(aidOf('kick')===0&&R.i<4||easy(R)) T.set(()=>{ if(!R.busy) this.g[k].classList.add('glow'); },2400); },
  tap(x,y,t){ const g=t&&t.closest('.goalpost'); if(!g||this.R.busy||this.busy) return; const k=this.k,R=this.R,far=g.dataset.k==='far',r=g.getBoundingClientRect(),b=this.ball; this.busy=true;
   Snd.play('kick'); b.style.left=(r.left+r.width/2-(far?14:30))+'px'; b.style.top=(r.top+r.height*.3)+'px'; b.style.fontSize=(far?26:60)+'px';
   if(g.dataset.k===k) T.set(()=>{ Snd.play('cheer'); g.classList.remove('glow'); g.classList.add('bump'); R.win(WD[k],CL[k]); },750);
@@ -296,11 +300,11 @@ const Kick={ start(){ stage.className='field'; this.seq=seq2('near','far',8); th
 // 🔭 the binoculars: which one is near, which one is far
 const Scope={ start(){ stage.className='field'; this.seq=seq2('near','far',8); this.R=run('scope',8,'عيون حادّة! 🔭',R=>this.round(R)); this.R.go(); },
  round(R){ const W=innerWidth,H=innerHeight,k=this.k=this.seq[R.i],an=this.an=pick(ANIM),nl=rnd()<.5,a=aidOf('scope'); stage.innerHTML=''; road();
-  const ns=Math.min(H*.34,220), fs=ns*(a===0?.28:a===1?.4:.52);
+  const ns=Math.min(H*.34,220), fs=ns*(R.i<3?.24:R.i<6?.36:.5);
   const n=obj(an[0],(nl?W*.22:W*.66)-ns/2,H*.92-ns,ns,'pick'); n.dataset.k='near';
   const f=obj(an[0],(nl?W*.6:W*.36)-fs/2,H*.4-fs*.4,fs,'pick'); f.dataset.k='far';
-  const q=`اضغط على ${an[1]} ال${adj(k,an[2])}`; this.q=q; setGoal(`<span>${q}</span>${tagW(k)}${R.steps()}`); tip(''); Speech.say(q);
-  if(a===0&&R.i<4) T.set(()=>{ const e=$(`.pick[data-k="${k}"]`); if(e&&!R.busy) e.classList.add('glow'); },2600); },
+  const q=`اضغط على ${an[1]} ال${adj(k,an[2])}`; this.q=q; setGoal(`<span>${q}</span>${tagW(k)}${lvChip(R)}${R.steps()}`); tip(''); Speech.say(q);
+  if(a===0&&R.i<4||easy(R)) T.set(()=>{ const e=$(`.pick[data-k="${k}"]`); if(e&&!R.busy) e.classList.add('glow'); },2600); },
  tap(x,y,t){ const p=t&&t.closest('.pick'); if(!p||this.R.busy) return; const k=this.k, an=this.an;
   if(p.dataset.k===k){ p.classList.remove('glow'); p.classList.add('bump'); this.R.win(WD[k],CL[k]); }
   else { p.classList.remove('thud'); void p.offsetWidth; p.classList.add('thud'); this.R.miss(k==='near'?`هذا بعيد، يبدو صغيرًا هناك. ${an[1]} ال${adj('near',an[2])} كبير قريب منك.`:`هذا قريب منك، يبدو كبيرًا. ${an[1]} ال${adj('far',an[2])} صغير هناك بعيدًا.`); $(`.pick[data-k="${k}"]`).classList.add('glow'); } },
@@ -310,15 +314,17 @@ const Scope={ start(){ stage.className='field'; this.seq=seq2('near','far',8); t
 const Home={ start(){ stage.className='grass'; this.seq=seq2('near','far',8); this.R=run('home',8,'قطة ذكية! 🐱🏠',R=>this.round(R)); this.R.go(); },
  round(R){ const W=innerWidth,H=innerHeight,k=this.k=this.seq[R.i],hr=rnd()<.5,m=Math.min(W,H),a=aidOf('home'); stage.innerHTML='';
   this.nearR=m*.26; this.farR=m*.6; const hs=Math.min(H*.3,170), hx=hr?W*.86-hs:W*.14, hy=H*.42; this.hc=[hx+hs/2,hy+hs/2];
-  if(a<2){ const z=h('div',{class:'zone'+(k==='near'?' on':'')},'',stage); const r=this.nearR; z.style.cssText+=`left:${this.hc[0]-r}px;top:${this.hc[1]-r}px;width:${2*r}px;height:${2*r}px;border-radius:50%;opacity:${k==='near'?1:.25}`;
-   if(k==='far'){ const fz=h('div',{class:'zone on'},'',stage); const fx=hr?0:W*.62; fz.style.cssText+=`left:${fx+10}px;top:${H*.2}px;width:${W*.36}px;height:${H*.72}px`; } }
+  this.zones=[]; this.showZone=()=>{ const z=h('div',{class:'zone'+(k==='near'?' on':'')},'',stage); const r=this.nearR; z.style.cssText+=`left:${this.hc[0]-r}px;top:${this.hc[1]-r}px;width:${2*r}px;height:${2*r}px;border-radius:50%;opacity:${k==='near'?1:.25}`;
+   if(k==='far'){ const fz=h('div',{class:'zone on'},'',stage); const fx=hr?0:W*.62; fz.style.cssText+=`left:${fx+10}px;top:${H*.2}px;width:${W*.36}px;height:${H*.72}px`; } stage.prepend(...$$('.zone')); };
+  // the circle around the house shows at first; later it only comes back after a mistake (the corrector)
+  if(R.i<5) this.showZone();
   obj('🏠',hx,hy,hs,'');
   const mid=(this.nearR+this.farR)/2, cs=Math.min(H*.16,96), cx=this.hc[0]+(hr?-mid:mid)-cs/2; this.cat=draggable(obj('🐈',clamp(cx,10,W-cs-10),H*.72,cs,''),(x,y)=>this.drop(x,y));
-  this.q=k==='near'?'اجعل القطة قريبة من البيت':'اجعل القطة بعيدة عن البيت'; setGoal(`<span>${this.q}</span>${tagW(k)}${R.steps()}`); tip('اسحب القطة ✋'); Speech.say(this.q); },
+  this.q=k==='near'?'اجعل القطة قريبة من البيت':'اجعل القطة بعيدة عن البيت'; setGoal(`<span>${this.q}</span>${tagW(k)}${lvChip(R)}${R.steps()}`); tip('اسحب القطة ✋'); Speech.say(this.q); },
  drop(x,y){ const R=this.R,k=this.k,d=Math.hypot(x-this.hc[0],y-this.hc[1]);
   if(k==='near'&&d<this.nearR){ this.cat.classList.add('bump'); R.win(adj('near',1),CL.near); return true; }
   if(k==='far'&&d>this.farR){ this.cat.classList.add('bump'); R.win(adj('far',1),CL.far); return true; }
-  R.miss(k==='near'?'ما زالت بعيدة! قرّبها أكثر من البيت 🏠':'ما زالت قريبة! أبعدها أكثر عن البيت'); return false; },
+  R.miss(k==='near'?'ما زالت بعيدة! قرّبها حتى تدخل الدائرة 🏠':'ما زالت قريبة! أبعدها إلى المكان المضيء'); if(!$('.zone')) this.showZone(); return false; },
  again(){ Speech.say(this.q); } };
 
 const ACTS=[
