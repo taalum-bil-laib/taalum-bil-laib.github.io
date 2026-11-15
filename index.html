@@ -250,6 +250,7 @@ td b{font-size:17px}
         <button class="game" data-game="math14" style="--a:#ef5350;--b:#ffb300"><span class="ic">🏠</span><h3>بيت الأعداد</h3><p>مكونات العدد: وزّع الشبابيك يمينًا ويسارًا، والشبابيك الناقصة، والبيت كله.</p><span class="pr" data-pr="math14"></span></button>
         <button class="game" data-game="math15" style="--a:#e53935;--b:#2e9d3a"><span class="ic">🧺</span><h3>سلة الجمع</h3><p>مفهوم الجمع: سلة التفاح، وحوض السمك، وجملة الجمع.</p><span class="pr" data-pr="math15"></span></button>
         <button class="game" data-game="math16" style="--a:#29b6f6;--b:#ffb300"><span class="ic">🐦</span><h3>عصافير الطرح</h3><p>مفهوم الطرح: العصافير تطير، والضفدع يقفز للخلف، وجملة الطرح.</p><span class="pr" data-pr="math16"></span></button>
+        <button class="game" data-game="math17" style="--a:#e09a00;--b:#1e6fd9"><span class="ic">🟨</span><h3>العشرات والآحاد</h3><p>الأعداد من ٢١ إلى ٥٠ بعصي الخرز الذهبية: اصنع العدد، واقرأه، ولوحة الأعداد.</p><span class="pr" data-pr="math17"></span></button>
       </div>
     </div>
   </section>
@@ -329,10 +330,10 @@ async function route(u){ view('vLoading'); let teacher=false, admin=false, block
 function home(){ if(!me){ view('vAuth'); return; } if(me.teacher){ view('vTeacher'); loadTeacher(); } else { view('vParent'); loadParent(); } }
 
 /* ---------- progress summaries ---------- */
-const GAMEKEYS={huroof:['huroof_progress'],ayn:['ayn_progress'],harakat:['hrk2_progress','hrk2_medals'],blend:['blend_progress','blend_medals'],math1:['math1_progress'],math2:['math2_progress'],math3:['math3_progress'],noor:['noor_progress','noor_medals'],fahm:['fahm_progress','fahm_medals'],num:['num_progress','num_medals'],math4:['math4_progress'],math5:['math5_progress'],math6:['math6_progress'],math7:['math7_progress'],math8:['math8_progress'],math9:['math9_progress'],math10:['math10_progress'],math11:['math11_progress'],math12:['math12_progress'],math13:['math13_progress'],math14:['math14_progress'],math15:['math15_progress'],math16:['math16_progress']};
+const GAMEKEYS={huroof:['huroof_progress'],ayn:['ayn_progress'],harakat:['hrk2_progress','hrk2_medals'],blend:['blend_progress','blend_medals'],math1:['math1_progress'],math2:['math2_progress'],math3:['math3_progress'],noor:['noor_progress','noor_medals'],fahm:['fahm_progress','fahm_medals'],num:['num_progress','num_medals'],math4:['math4_progress'],math5:['math5_progress'],math6:['math6_progress'],math7:['math7_progress'],math8:['math8_progress'],math9:['math9_progress'],math10:['math10_progress'],math11:['math11_progress'],math12:['math12_progress'],math13:['math13_progress'],math14:['math14_progress'],math15:['math15_progress'],math16:['math16_progress'],math17:['math17_progress']};
 // the reading lessons, shown on the hub unit by unit (lesson id, number of stages)
 const UNITS={fatha:[['fl',5],['fw',3],['fs',2]],kasra:[['kl',5],['fk',2],['kw',2],['ks',2]],damma:[['dl',5],['mx',2],['dw',2],['rv',2]],madd:[['ma',2],['my',2],['mw',2]],sukun:[['sk',3],['sh',2],['ss',1]],tanween:[['tn',3],['tx',2],['tw',2]]};
-const CPT=[['math4',3],['math5',3],['math6',3],['math7',4],['math8',5]], NUMG=[['math9',4],['math10',3],['math11',3],['math12',3],['math13',3],['math14',3],['math15',3],['math16',3]];
+const CPT=[['math4',3],['math5',3],['math6',3],['math7',4],['math8',5]], NUMG=[['math9',4],['math10',3],['math11',3],['math12',3],['math13',3],['math14',3],['math15',3],['math16',3],['math17',3]];
 const parse=v=>{ try{ return v?JSON.parse(v):null; }catch(e){ return null; } };
 function summarize(data){ // data: {game:{key:jsonString}}
  const g=k=>data[k]||{}; const s={};
@@ -360,7 +361,7 @@ async function loadTeacher(){ const tb=$('#tBody'); tb.innerHTML='<tr><td colspa
   rows.sort((a,b)=>a.name.localeCompare(b.name,'ar')); $('#teacherEmpty').hidden=rows.length>0;
   tb.innerHTML=rows.map(r=>{ const a=avatarOf(r.id); return `<tr><td><b>${a.e} ${esc(r.name)}</b><br><small class="note">${r.parents?`مرتبط بـ ${AR(r.parents)} ولي أمر`:'لم يرتبط ولي أمر بعد'}</small></td>
    <td><span class="code">${fmtCode(r.id)}</span> <button class="btn sm" data-copy="${r.id}">نسخ</button></td>
-   <td>${bar(r.s.huroof,28)}</td><td>${bar(r.s.aynLesson,4)}<small>سباق: ${AR(r.s.aynRace)} حرفًا</small></td><td>${bar(r.s.harakat,28)}</td><td>${bar(r.s.blend,3)}</td><td>${bar(r.s.noor,51)}</td><td>${bar(r.s.fahm,14)}</td><td>${bar(r.s.colors,10)}</td><td>${bar(r.s.shapes,9)}</td><td>${bar(r.s.longshort,4)}</td><td>${bar(r.s.bigsmall,4)}</td><td>${bar(r.s.num,12)}</td><td>${bar(r.s.concepts,18)}</td><td>${bar(r.s.numg,25)}</td><td><b>🏅 ${AR(r.s.medals)}</b></td>
+   <td>${bar(r.s.huroof,28)}</td><td>${bar(r.s.aynLesson,4)}<small>سباق: ${AR(r.s.aynRace)} حرفًا</small></td><td>${bar(r.s.harakat,28)}</td><td>${bar(r.s.blend,3)}</td><td>${bar(r.s.noor,51)}</td><td>${bar(r.s.fahm,14)}</td><td>${bar(r.s.colors,10)}</td><td>${bar(r.s.shapes,9)}</td><td>${bar(r.s.longshort,4)}</td><td>${bar(r.s.bigsmall,4)}</td><td>${bar(r.s.num,12)}</td><td>${bar(r.s.concepts,18)}</td><td>${bar(r.s.numg,28)}</td><td><b>🏅 ${AR(r.s.medals)}</b></td>
    <td style="white-space:nowrap"><button class="btn sm primary" data-play="${r.id}" data-name="${esc(r.name)}">▶ العب</button> <button class="btn sm danger" data-del="${r.id}" data-name="${esc(r.name)}">حذف</button></td></tr>`; }).join('');
  }catch(e){ tb.innerHTML=`<tr><td colspan="17"><div class="msg err">${esc(errText(e))}</div></td></tr>`; } }
 $('#fAdd').addEventListener('submit',async e=>{ e.preventDefault(); const name=$('#inStudent').value.trim(); if(!name){ msg($('#addMsg'),'اكتب اسم الطالب.'); return; } $('#btnAdd').disabled=true;
