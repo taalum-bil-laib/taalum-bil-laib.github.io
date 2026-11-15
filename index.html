@@ -93,6 +93,12 @@ td b{font-size:17px}
 .sectbtn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:16px 12px;border-radius:26px;border:3px solid rgba(255,255,255,.18);background:linear-gradient(160deg,var(--a),var(--b));color:#fff;cursor:pointer;box-shadow:inset 0 -40px 60px rgba(0,0,0,.25);opacity:.55;transition:transform .15s,opacity .15s}
 .sectbtn span{font-size:clamp(40px,8vw,56px);line-height:1.1}.sectbtn b{font-family:var(--display);font-weight:400;font-size:clamp(24px,5vw,38px);text-shadow:0 2px 0 rgba(0,0,0,.3)}.sectbtn small{font-size:14px;color:#f0f0ff}
 .sectbtn[aria-pressed="true"]{opacity:1;border-color:#ffd75e;transform:translateY(-3px);box-shadow:0 0 0 4px rgba(255,215,94,.35),inset 0 -40px 60px rgba(0,0,0,.25)}
+/* levels inside a section: one row of level buttons, then only that level's games */
+.sectbox{display:flex;flex-direction:column;gap:14px}
+.lvls{display:flex;gap:10px;flex-wrap:wrap}
+.lvbtn{flex:1;min-width:150px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 12px;border-radius:18px;border:3px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:var(--ink);cursor:pointer;transition:transform .15s}
+.lvbtn b{font-family:var(--display);font-weight:400;font-size:clamp(20px,3.6vw,26px)}.lvbtn small{font-size:14px;color:var(--muted)}
+.lvbtn[aria-pressed="true"]{background:var(--c);border-color:#ffd75e;transform:translateY(-2px)}.lvbtn[aria-pressed="true"] small{color:#fff}
 .games{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
 .game{position:relative;display:flex;flex-direction:column;gap:6px;align-items:flex-start;text-align:right;padding:18px;border-radius:24px;border:2px solid rgba(255,255,255,.16);background:linear-gradient(160deg,var(--a),var(--b));cursor:pointer;min-width:0;box-shadow:inset 0 -50px 60px rgba(0,0,0,.25);transition:transform .15s}
 .game:hover,.game:focus-visible{transform:translateY(-4px)}
@@ -201,38 +207,50 @@ td b{font-size:17px}
   <!-- the games hub for the chosen student -->
   <section id="vHub" hidden>
     <div class="panel player"><div class="av" id="pAv">🦁</div><div><b id="pName"></b><div class="sync" id="syncState"></div></div><span style="flex:1"></span><button class="btn sm" id="btnLite" title="للأجهزة القديمة: ألعاب المجسمات تعمل أخف من البداية على هذا الجهاز فقط"></button><button class="btn sm" id="btnSwitch">تغيير الطالب</button></div>
-    <div class="sects" role="tablist"><button class="sectbtn" role="tab" data-sect="ar" style="--a:#e3262f;--b:#7a1fd6"><span>📚</span><b>اللغة العربية</b><small>الحروف والحركات والقراءة والفهم</small></button><button class="sectbtn" role="tab" data-sect="ma" style="--a:#1e88e5;--b:#0f9d8a"><span>🔢</span><b>الرياضيات</b><small>الألوان والأشكال والمفاهيم والأرقام</small></button></div>
-    <div class="games" id="g-ar">
-      <button class="game" data-game="huroof" style="--a:#3f98ea;--b:#2f6b2a"><span class="ic">🦁</span><h3>مغامرات الحروف</h3><p>من الألف إلى الياء في ٢٨ عالمًا.</p><span class="pr" data-pr="huroof"></span></button>
-      <button class="game" data-game="ayn" style="--a:#38d27a;--b:#1b3a8a"><span class="ic">🧩</span><h3>أين يسكن الحرف؟</h3><p>أول الكلمة ووسطها وآخرها.</p><span class="pr" data-pr="ayn"></span></button>
-      <button class="game" data-game="harakat" style="--a:#e3262f;--b:#2457d6"><span class="ic">🦸</span><h3>أبطال الحركات</h3><p>فتحة وضمة وكسرة.</p><span class="pr" data-pr="harakat"></span></button>
-      <button class="game" data-game="blend" style="--a:#ff8a3d;--b:#7a1fd6"><span class="ic">📖</span><h3>فتحة يقرأ</h3><p>ضم المقاطع وقراءة الكلمات.</p><span class="pr" data-pr="blend"></span></button>
-      <button class="game" data-game="noor" data-u="fatha" style="--a:#ff5a5f;--b:#a8121c"><span class="ic">🔴</span><h3>الفتحة</h3><p>حروف ثم كلمات ثم جمل بالفتحة، ويمثّلها البطل فتحة.</p><span class="pr" data-pr="u-fatha"></span></button>
-      <button class="game" data-game="noor" data-u="kasra" style="--a:#2fd06a;--b:#0f6a35"><span class="ic">🟢</span><h3>الكسرة</h3><p>الحروف بالكسرة، والفتحة والكسرة معًا، وكلمات وجمل بالكسرة.</p><span class="pr" data-pr="u-kasra"></span></button>
-      <button class="game" data-game="noor" data-u="damma" style="--a:#5b8cff;--b:#1b3fae"><span class="ic">🔵</span><h3>الضمة والمراجعة</h3><p>الحروف بالضمة، والحركات الثلاث معًا، وجمل المراجعة.</p><span class="pr" data-pr="u-damma"></span></button>
-      <button class="game" data-game="noor" data-u="madd" style="--a:#ffb300;--b:#c2185b"><span class="ic">🎵</span><h3>المدود</h3><p>المد بالألف والياء والواو: بَا ، بِي ، بُو.</p><span class="pr" data-pr="u-madd"></span></button>
-      <button class="game" data-game="noor" data-u="sukun" style="--a:#ff5a5a;--b:#1d7a50"><span class="ic">🚦</span><h3>السكون والشدة</h3><p>سيارة المقاطع وإشارة المرور، والحرف التوأم.</p><span class="pr" data-pr="u-sukun"></span></button>
-      <button class="game" data-game="noor" data-u="tanween" style="--a:#c86adf;--b:#2155d6"><span class="ic">👯</span><h3>التنوين</h3><p>البطل وتوأمه يضعان علامتين: بٌ ← بُنْ.</p><span class="pr" data-pr="u-tanween"></span></button>
-      <button class="game" data-game="fahm" style="--a:#ff9f1c;--b:#7a1fd6"><span class="ic">🎭</span><h3>مسرح الفهم</h3><p>الفهم القرائي: اقرأ الجملة واختر المشهد، صح أم خطأ، أكمل، رتّب، مَن وماذا؟</p><span class="pr" data-pr="fahm"></span></button>
+    <div class="sects" role="tablist"><button class="sectbtn" role="tab" data-sect="ar" style="--a:#e3262f;--b:#7a1fd6"><span>📚</span><b>لغتي</b><small>الحروف، ثم الحركات والسكون والقراءة</small></button><button class="sectbtn" role="tab" data-sect="ma" style="--a:#1e88e5;--b:#0f9d8a"><span>🔢</span><b>الرياضيات</b><small>المفاهيم، ثم الأرقام، ثم الترتيب والمقارنة</small></button></div>
+    <div id="g-ar" class="sectbox">
+      <div class="lvls" role="tablist"><button class="lvbtn" data-lv="1" style="--c:#ff9a1f"><b>المستوى الأول</b><small>الحروف</small></button><button class="lvbtn" data-lv="2" style="--c:#c86adf"><b>المستوى الثاني</b><small>الحركات والسكون وغيرها</small></button></div>
+      <div class="games" data-lv="1">
+        <button class="game" data-game="huroof" style="--a:#3f98ea;--b:#2f6b2a"><span class="ic">🦁</span><h3>مغامرات الحروف</h3><p>من الألف إلى الياء في ٢٨ عالمًا.</p><span class="pr" data-pr="huroof"></span></button>
+        <button class="game" data-game="ayn" style="--a:#38d27a;--b:#1b3a8a"><span class="ic">🧩</span><h3>أين يسكن الحرف؟</h3><p>أول الكلمة ووسطها وآخرها.</p><span class="pr" data-pr="ayn"></span></button>
+      </div>
+      <div class="games" data-lv="2">
+        <button class="game" data-game="harakat" style="--a:#e3262f;--b:#2457d6"><span class="ic">🦸</span><h3>أبطال الحركات</h3><p>فتحة وضمة وكسرة.</p><span class="pr" data-pr="harakat"></span></button>
+        <button class="game" data-game="blend" style="--a:#ff8a3d;--b:#7a1fd6"><span class="ic">📖</span><h3>فتحة يقرأ</h3><p>ضم المقاطع وقراءة الكلمات.</p><span class="pr" data-pr="blend"></span></button>
+        <button class="game" data-game="noor" data-u="fatha" style="--a:#ff5a5f;--b:#a8121c"><span class="ic">🔴</span><h3>الفتحة</h3><p>حروف ثم كلمات ثم جمل بالفتحة، ويمثّلها البطل فتحة.</p><span class="pr" data-pr="u-fatha"></span></button>
+        <button class="game" data-game="noor" data-u="kasra" style="--a:#2fd06a;--b:#0f6a35"><span class="ic">🟢</span><h3>الكسرة</h3><p>الحروف بالكسرة، والفتحة والكسرة معًا، وكلمات وجمل بالكسرة.</p><span class="pr" data-pr="u-kasra"></span></button>
+        <button class="game" data-game="noor" data-u="damma" style="--a:#5b8cff;--b:#1b3fae"><span class="ic">🔵</span><h3>الضمة والمراجعة</h3><p>الحروف بالضمة، والحركات الثلاث معًا، وجمل المراجعة.</p><span class="pr" data-pr="u-damma"></span></button>
+        <button class="game" data-game="noor" data-u="madd" style="--a:#ffb300;--b:#c2185b"><span class="ic">🎵</span><h3>المدود</h3><p>المد بالألف والياء والواو: بَا ، بِي ، بُو.</p><span class="pr" data-pr="u-madd"></span></button>
+        <button class="game" data-game="noor" data-u="sukun" style="--a:#ff5a5a;--b:#1d7a50"><span class="ic">🚦</span><h3>السكون والشدة</h3><p>سيارة المقاطع وإشارة المرور، والحرف التوأم.</p><span class="pr" data-pr="u-sukun"></span></button>
+        <button class="game" data-game="noor" data-u="tanween" style="--a:#c86adf;--b:#2155d6"><span class="ic">👯</span><h3>التنوين</h3><p>البطل وتوأمه يضعان علامتين: بٌ ← بُنْ.</p><span class="pr" data-pr="u-tanween"></span></button>
+        <button class="game" data-game="fahm" style="--a:#ff9f1c;--b:#7a1fd6"><span class="ic">🎭</span><h3>مسرح الفهم</h3><p>الفهم القرائي: اقرأ الجملة واختر المشهد، صح أم خطأ، أكمل، رتّب، مَن وماذا؟</p><span class="pr" data-pr="fahm"></span></button>
+      </div>
     </div>
-    <div class="games" id="g-ma" hidden>
-      <button class="game" data-game="math1" style="--a:#ff5a5a;--b:#1e88e5"><span class="ic">🎈</span><h3>عالم الألوان والأشكال</h3><p>المفاهيم ما قبل الأكاديمية: الألوان والأشكال الهندسية.</p><span class="pr" data-pr="math1"></span></button>
-      <button class="game" data-game="math2" style="--a:#ff8a3d;--b:#14b8a6"><span class="ic">🦒</span><h3>طويل وقصير</h3><p>الثعبان، القطار السحري، الزرافة والسلحفاة، والولد المطاطي.</p><span class="pr" data-pr="math2"></span></button>
-      <button class="game" data-game="math3" style="--a:#ff5a5a;--b:#14b8a6"><span class="ic">🐘</span><h3>كبير وصغير</h3><p>البالون، الفيل والفأر، ملابس بابا والطفل، والدمى المتداخلة.</p><span class="pr" data-pr="math3"></span></button>
-      <button class="game" data-game="num" style="--a:#fdd835;--b:#e53935"><span class="ic">🔢</span><h3>الأرقام</h3><p>لكل رقم لون مونتسوري وشكل يشبهه (٩ مصاصة 🍭)، وبرج المكعبات يبحث عن رقمه.</p><span class="pr" data-pr="num"></span></button>
-      <button class="game" data-game="math4" style="--a:#8e6bd8;--b:#0fa596"><span class="ic">⚖️</span><h3>ثقيل وخفيف</h3><p>الميزان السحري، والمنطاد والشاحنة، وبطل الأثقال.</p><span class="pr" data-pr="math4"></span></button>
-      <button class="game" data-game="math5" style="--a:#43a047;--b:#1e6fd9"><span class="ic">🔭</span><h3>قريب وبعيد</h3><p>ركلة إلى المرمى القريب أو البعيد، والمنظار، والقطة والبيت.</p><span class="pr" data-pr="math5"></span></button>
-      <button class="game" data-game="math6" style="--a:#1e88e5;--b:#8e24aa"><span class="ic">🧭</span><h3>الاتجاهات</h3><p>فوق وتحت، أمام وخلف، ويمين ويسار مع سائق المدينة.</p><span class="pr" data-pr="math6"></span></button>
-      <button class="game" data-game="math7" style="--a:#ff8a3d;--b:#455a64"><span class="ic">🏭</span><h3>مصنع الفرز</h3><p>التصنيف حسب اللون والشكل والحجم والنوع.</p><span class="pr" data-pr="math7"></span></button>
-      <button class="game" data-game="math8" style="--a:#3949ab;--b:#ff9f1c"><span class="ic">🕰️</span><h3>الزمن</h3><p>النهار والليل، وقطار الأسبوع، واليوم وغدًا، والشهور الهجرية.</p><span class="pr" data-pr="math8"></span></button>
-      <button class="game" data-game="math9" style="--a:#e53935;--b:#fdd835"><span class="ic">✏️</span><h3>رسّام الأرقام</h3><p>تتبّع الرقم بإصبعك ثم اكتبه من ذاكرتك (١–٢٠).</p><span class="pr" data-pr="math9"></span></button>
-      <button class="game" data-game="math10" style="--a:#ffb300;--b:#1a3fb0"><span class="ic">🟨</span><h3>عائلة العشرة</h3><p>الأعداد ١١–٢٠ بعصا الخرز الذهبية ولوحة السحر.</p><span class="pr" data-pr="math10"></span></button>
-      <button class="game" data-game="math11" style="--a:#8e24aa;--b:#2e9d3a"><span class="ic">🪜</span><h3>الترتيب</h3><p>الدرج السحري، والعدّ التنازلي للصاروخ، والرقم الناقص.</p><span class="pr" data-pr="math11"></span></button>
-      <button class="game" data-game="math12" style="--a:#2e9d3a;--b:#e53935"><span class="ic">🐊</span><h3>المقارنة</h3><p>التمساح الجائع، وميزان الأعداد، وسباق الأبراج.</p><span class="pr" data-pr="math12"></span></button>
-      <button class="game" data-game="math13" style="--a:#e53935;--b:#1e6fd9"><span class="ic">📏</span><h3>مونتسوري الأعداد</h3><p>قضبان الأعداد، وصندوق المغازل والصفر، والزوجي والفردي.</p><span class="pr" data-pr="math13"></span></button>
-      <button class="game" data-game="math14" style="--a:#ef5350;--b:#ffb300"><span class="ic">🏠</span><h3>بيت الأعداد</h3><p>مكونات العدد: وزّع الشبابيك يمينًا ويسارًا، والشبابيك الناقصة، والبيت كله.</p><span class="pr" data-pr="math14"></span></button>
-      <button class="game" data-game="math15" style="--a:#e53935;--b:#2e9d3a"><span class="ic">🧺</span><h3>سلة الجمع</h3><p>مفهوم الجمع: سلة التفاح، وحوض السمك، وجملة الجمع.</p><span class="pr" data-pr="math15"></span></button>
-      <button class="game" data-game="math16" style="--a:#29b6f6;--b:#ffb300"><span class="ic">🐦</span><h3>عصافير الطرح</h3><p>مفهوم الطرح: العصافير تطير، والضفدع يقفز للخلف، وجملة الطرح.</p><span class="pr" data-pr="math16"></span></button>
+    <div id="g-ma" class="sectbox" hidden>
+      <div class="lvls" role="tablist"><button class="lvbtn" data-lv="0" style="--c:#14b8a6"><b>المستوى التمهيدي</b><small>المفاهيم</small></button><button class="lvbtn" data-lv="1" style="--c:#ff9a1f"><b>المستوى الأول</b><small>الأرقام من ١ إلى ٢٠</small></button><button class="lvbtn" data-lv="2" style="--c:#c86adf"><b>المستوى الثاني</b><small>الترتيب والمقارنة وغيرها</small></button></div>
+      <div class="games" data-lv="0">
+        <button class="game" data-game="math1" style="--a:#ff5a5a;--b:#1e88e5"><span class="ic">🎈</span><h3>عالم الألوان والأشكال</h3><p>المفاهيم ما قبل الأكاديمية: الألوان والأشكال الهندسية.</p><span class="pr" data-pr="math1"></span></button>
+        <button class="game" data-game="math2" style="--a:#ff8a3d;--b:#14b8a6"><span class="ic">🦒</span><h3>طويل وقصير</h3><p>الثعبان، القطار السحري، الزرافة والسلحفاة، والولد المطاطي.</p><span class="pr" data-pr="math2"></span></button>
+        <button class="game" data-game="math3" style="--a:#ff5a5a;--b:#14b8a6"><span class="ic">🐘</span><h3>كبير وصغير</h3><p>البالون، الفيل والفأر، ملابس بابا والطفل، والدمى المتداخلة.</p><span class="pr" data-pr="math3"></span></button>
+        <button class="game" data-game="math4" style="--a:#8e6bd8;--b:#0fa596"><span class="ic">⚖️</span><h3>ثقيل وخفيف</h3><p>الميزان السحري، والمنطاد والشاحنة، وبطل الأثقال.</p><span class="pr" data-pr="math4"></span></button>
+        <button class="game" data-game="math5" style="--a:#43a047;--b:#1e6fd9"><span class="ic">🔭</span><h3>قريب وبعيد</h3><p>ركلة إلى المرمى القريب أو البعيد، والمنظار، والقطة والبيت.</p><span class="pr" data-pr="math5"></span></button>
+        <button class="game" data-game="math6" style="--a:#1e88e5;--b:#8e24aa"><span class="ic">🧭</span><h3>الاتجاهات</h3><p>فوق وتحت، أمام وخلف، ويمين ويسار مع سائق المدينة.</p><span class="pr" data-pr="math6"></span></button>
+        <button class="game" data-game="math7" style="--a:#ff8a3d;--b:#455a64"><span class="ic">🏭</span><h3>مصنع الفرز</h3><p>التصنيف حسب اللون والشكل والحجم والنوع.</p><span class="pr" data-pr="math7"></span></button>
+        <button class="game" data-game="math8" style="--a:#3949ab;--b:#ff9f1c"><span class="ic">🕰️</span><h3>الزمن</h3><p>النهار والليل، وقطار الأسبوع، واليوم وغدًا، والشهور الهجرية.</p><span class="pr" data-pr="math8"></span></button>
+      </div>
+      <div class="games" data-lv="1">
+        <button class="game" data-game="num" style="--a:#fdd835;--b:#e53935"><span class="ic">🔢</span><h3>الأرقام</h3><p>لكل رقم لون مونتسوري وشكل يشبهه (٩ مصاصة 🍭)، وبرج المكعبات يبحث عن رقمه.</p><span class="pr" data-pr="num"></span></button>
+        <button class="game" data-game="math9" style="--a:#e53935;--b:#fdd835"><span class="ic">✏️</span><h3>رسّام الأرقام</h3><p>تتبّع الرقم بإصبعك ثم اكتبه من ذاكرتك (١–٢٠).</p><span class="pr" data-pr="math9"></span></button>
+        <button class="game" data-game="math10" style="--a:#ffb300;--b:#1a3fb0"><span class="ic">🟨</span><h3>عائلة العشرة</h3><p>الأعداد ١١–٢٠ بعصا الخرز الذهبية ولوحة السحر.</p><span class="pr" data-pr="math10"></span></button>
+        <button class="game" data-game="math13" style="--a:#e53935;--b:#1e6fd9"><span class="ic">📏</span><h3>مونتسوري الأعداد</h3><p>قضبان الأعداد، وصندوق المغازل والصفر، والزوجي والفردي.</p><span class="pr" data-pr="math13"></span></button>
+      </div>
+      <div class="games" data-lv="2">
+        <button class="game" data-game="math11" style="--a:#8e24aa;--b:#2e9d3a"><span class="ic">🪜</span><h3>الترتيب</h3><p>الدرج السحري، والعدّ التنازلي للصاروخ، والرقم الناقص.</p><span class="pr" data-pr="math11"></span></button>
+        <button class="game" data-game="math12" style="--a:#2e9d3a;--b:#e53935"><span class="ic">🐊</span><h3>المقارنة</h3><p>التمساح الجائع، وميزان الأعداد، وسباق الأبراج.</p><span class="pr" data-pr="math12"></span></button>
+        <button class="game" data-game="math14" style="--a:#ef5350;--b:#ffb300"><span class="ic">🏠</span><h3>بيت الأعداد</h3><p>مكونات العدد: وزّع الشبابيك يمينًا ويسارًا، والشبابيك الناقصة، والبيت كله.</p><span class="pr" data-pr="math14"></span></button>
+        <button class="game" data-game="math15" style="--a:#e53935;--b:#2e9d3a"><span class="ic">🧺</span><h3>سلة الجمع</h3><p>مفهوم الجمع: سلة التفاح، وحوض السمك، وجملة الجمع.</p><span class="pr" data-pr="math15"></span></button>
+        <button class="game" data-game="math16" style="--a:#29b6f6;--b:#ffb300"><span class="ic">🐦</span><h3>عصافير الطرح</h3><p>مفهوم الطرح: العصافير تطير، والضفدع يقفز للخلف، وجملة الطرح.</p><span class="pr" data-pr="math16"></span></button>
+      </div>
     </div>
   </section>
 </div>
@@ -415,7 +433,10 @@ function showHubProgress(){ const data={}; for(const g in GAMEKEYS) data[g]=snap
 $('#btnSwitch').onclick=async()=>{ const wasGuest=player&&player.guest; await stopPlayer(); if(wasGuest&&!me) view('vAuth'); else home(); };
 $('#btnGuest').onclick=()=>startPlayer({guest:true,name:'لاعب ضيف'});
 $$('.game').forEach(b=>b.onclick=()=>openGame(b.dataset.game,b.dataset.u));
-// two sections only: اللغة العربية and الرياضيات
+// two sections (لغتي and الرياضيات), each split into levels; the last chosen section and level are remembered on this device
+const LVDEF={ar:'1',ma:'0'};
+function showLv(box,lv){ box.querySelectorAll('.lvbtn').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lv===lv))); box.querySelectorAll('.games').forEach(g=>g.hidden=g.dataset.lv!==lv); try{ localStorage.setItem('hub_lv_'+box.id,lv); }catch(e){} }
+$$('.sectbox').forEach(box=>{ box.querySelectorAll('.lvbtn').forEach(b=>b.onclick=()=>showLv(box,b.dataset.lv)); let lv=LVDEF[box.id.slice(2)]; try{ lv=localStorage.getItem('hub_lv_'+box.id)||lv; }catch(e){} if(!box.querySelector(`.lvbtn[data-lv="${lv}"]`)) lv=LVDEF[box.id.slice(2)]; showLv(box,lv); });
 function showSect(k){ $$('.sectbtn').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.sect===k))); $('#g-ar').hidden=k!=='ar'; $('#g-ma').hidden=k!=='ma'; try{ localStorage.setItem('hub_sect',k); }catch(e){} }
 $$('.sectbtn').forEach(b=>b.onclick=()=>showSect(b.dataset.sect));
 showSect((()=>{ try{ return localStorage.getItem('hub_sect')||'ar'; }catch(e){ return 'ar'; } })());
