@@ -295,6 +295,9 @@ css(`.board{position:absolute;border-radius:28px;background:#fff;box-shadow:0 14
 .spark{position:fixed;z-index:30;pointer-events:none;font-size:18px;animation:spk .7s ease-out forwards}@keyframes spk{to{transform:translateY(-26px) scale(.3);opacity:0}}
 .lamps{position:absolute;left:50%;transform:translateX(-50%);display:flex;gap:6px;direction:ltr}.lamps i{font-style:normal;font-size:22px;filter:grayscale(1) opacity(.35)}.lamps i.on{filter:none}
 .pop2{position:absolute;font-size:120px;line-height:1;pointer-events:none;animation:pp2 1.4s ease-out forwards}@keyframes pp2{0%{transform:scale(.2)}40%{transform:scale(1.2)}100%{transform:scale(1) translateY(-30px);opacity:0}}`);
+// the numbers 21–50 borrow the colour of their ones digit (Montessori bead colours stop at ten)
+const TX=n=>TXT(n>20?(n%10||10):n), MCX=n=>MCOL(n>20?(n%10||10):n);
+const nname=n=>n<=20?NNAME[n]:n%10?NNAME[n%10]+' و'+['','','عشرون','ثلاثون','أربعون','خمسون'][(n/10)|0]:['','','عشرون','ثلاثون','أربعون','خمسون'][n/10];
 const FONT='"Baloo Bhaijaan 2", Tahoma, sans-serif';
 // guide: 'solid' faint digit, 'outline' dotted edge, 'none' from memory
 function Tracer(id,list,guide,title){ return {
@@ -310,16 +313,16 @@ function Tracer(id,list,guide,title){ return {
   this.drawGuide(guide==='none'?'none':guide,false);
   if(guide!=='none'){ const s=this.startPt(); if(s){ const d=h('div',{class:'dot0'},'',b); d.style.left=s[0]+'px'; d.style.top=s[1]+'px'; } }
   const k=this.kc; k.onpointerdown=e=>this.pdown(e); k.onpointermove=e=>this.pmove(e); k.onpointerup=k.onpointercancel=e=>this.pup(e);
-  this.q=guide==='none'?`اكتب الرقم ${NNAME[n]}`:`ارسم الرقم ${NNAME[n]}`;
-  setGoal(`<span>${this.q}</span><b style="font-size:1.3em;color:${TXT(n)};-webkit-text-stroke:1px rgba(0,0,0,.15)">${guide==='none'?'':NUM(n)}</b>${lvChip(R)}${R.steps()}`); tip(guide==='none'?'اكتب الرقم بإصبعك في اللوح ✏️':'ابدأ من النقطة الخضراء وارسم فوق الرقم ✏️'); Speech.say(this.q);
+  this.q=guide==='none'?`اكتب الرقم ${nname(n)}`:`ارسم الرقم ${nname(n)}`;
+  setGoal(`<span>${this.q}</span><b style="font-size:1.3em;color:${TX(n)};-webkit-text-stroke:1px rgba(0,0,0,.15)">${guide==='none'?'':NUM(n)}</b>${lvChip(R)}${R.steps()}`); tip(guide==='none'?'اكتب الرقم بإصبعك في اللوح ✏️':'ابدأ من النقطة الخضراء وارسم فوق الرقم ✏️'); Speech.say(this.q);
   opts([{v:'clear',label:'امسح',em:'🧽',color:'#78909c'},{v:'done',label:'انتهيت',em:'✅',color:'#2e9d3a'}],v=>v==='clear'?this.clear():this.check(true)); },
  font(){ return `800 ${this.fs}px ${FONT}`; },
  mask(thick){ const c=document.createElement('canvas'); c.width=this.mw; c.height=this.mh; const x=c.getContext('2d'), s=this.mw/this.bw; x.scale(s,s); x.font=this.font(); x.textAlign='center'; x.textBaseline='middle'; x.fillStyle='#000'; x.fillText(NUM(this.n),this.bw/2,this.bh/2+this.fs*.06);
   if(thick){ x.lineWidth=this.lw*1.25; x.lineJoin='round'; x.strokeStyle='#000'; x.strokeText(NUM(this.n),this.bw/2,this.bh/2+this.fs*.06); }
   const d=x.getImageData(0,0,this.mw,this.mh).data, m=new Uint8Array(this.mw*this.mh); for(let i=0;i<m.length;i++) m[i]=d[i*4+3]>60?1:0; return m; },
  drawGuide(kind,full){ const x=this.gc.getContext('2d'), n=this.n; x.clearRect(0,0,this.bw,this.bh); if(kind==='none'&&!full) return; x.font=this.font(); x.textAlign='center'; x.textBaseline='middle'; const px=this.bw/2, py=this.bh/2+this.fs*.06;
-  if(full){ x.fillStyle=TXT(n); x.fillText(NUM(n),px,py); return; }
-  if(kind==='solid'){ x.globalAlpha=.28; x.fillStyle=TXT(n); x.fillText(NUM(n),px,py); x.globalAlpha=1; }
+  if(full){ x.fillStyle=TX(n); x.fillText(NUM(n),px,py); return; }
+  if(kind==='solid'){ x.globalAlpha=.28; x.fillStyle=TX(n); x.fillText(NUM(n),px,py); x.globalAlpha=1; }
   else { x.setLineDash([10,12]); x.lineWidth=4; x.strokeStyle='#90a4ae'; x.strokeText(NUM(n),px,py); x.setLineDash([]); } },
  startPt(){ // the top of the first digit (Arabic-Indic numbers are written left to right)
   const m=this.thin, w=this.mw, h=this.mh; let minX=w,maxX=0; for(let y=0;y<h;y++) for(let x=0;x<w;x++) if(m[y*w+x]){ if(x<minX) minX=x; if(x>maxX) maxX=x; }
@@ -329,7 +332,7 @@ function Tracer(id,list,guide,title){ return {
  pmove(e){ if(!this.drawing) return; const p=this.pos(e), s=this.strokes[this.strokes.length-1], q=s[s.length-1]; if(Math.hypot(p[0]-q[0],p[1]-q[1])<3) return; s.push(p); this.dot(q,p);
   const now=performance.now(); if(!this.ls||now-this.ls>45){ this.ls=now; if($$('.spark').length<24){ const sp=h('div',{class:'spark'},pick(['✨','⭐','🌟']),document.body); sp.style.left=e.clientX+'px'; sp.style.top=e.clientY+'px'; setTimeout(()=>sp.remove(),700); } } },
  pup(){ if(!this.drawing) return; this.drawing=false; this.check(false); },
- dot(a,b){ const x=this.kc.getContext('2d'); x.strokeStyle=TXT(this.n)==='#607d8b'?'#78909c':MCOL(this.n)==='#f5f5f5'?'#90a4ae':MCOL(this.n); x.lineWidth=this.lw; x.lineCap='round'; x.lineJoin='round'; x.beginPath(); x.moveTo(a[0],a[1]); x.lineTo(b[0],b[1]); x.stroke(); },
+ dot(a,b){ const x=this.kc.getContext('2d'); x.strokeStyle=TX(this.n)==='#607d8b'?'#78909c':MCX(this.n)==='#f5f5f5'?'#90a4ae':MCX(this.n); x.lineWidth=this.lw; x.lineCap='round'; x.lineJoin='round'; x.beginPath(); x.moveTo(a[0],a[1]); x.lineTo(b[0],b[1]); x.stroke(); },
  clear(){ this.strokes=[]; this.kc.getContext('2d').clearRect(0,0,this.bw,this.bh); Snd.play('whoosh'); },
  // how much of the digit is covered (recall) and how much of the drawing is on the digit (precision)
  score(){ const w=this.mw,h=this.mh, c=document.createElement('canvas'); c.width=w; c.height=h; const x=c.getContext('2d'), s=w/this.bw; let pts=this.strokes;
@@ -358,7 +361,7 @@ function Tracer(id,list,guide,title){ return {
   return {best,bestF,mine}; },
  check(asked){ if(this.R.busy||!this.strokes.length){ if(asked) this.R.miss('ارسم الرقم أولًا ✏️'); return; } const mem=guide==='none';
   if(mem){ const c=this.classify(); if(c.best===this.n&&c.bestF>=.5) return this.win();
-   if(asked){ this.R.miss(c.best&&c.bestF>=.5?`هذا يشبه الرقم ${NUM(c.best)} 🙂 نريد ${NNAME[this.n]}. انظر إليه ثم امسح وحاول`:'أكمل كتابة الرقم ✏️'); this.drawGuide('solid'); } return; }
+   if(asked){ this.R.miss(c.best&&c.bestF>=.5?`هذا يشبه الرقم ${NUM(c.best)} 🙂 نريد ${nname(this.n)}. انظر إليه ثم امسح وحاول`:'أكمل كتابة الرقم ✏️'); this.drawGuide('solid'); } return; }
   // the first numbers forgive a shaky hand; the line gets stricter step by step
   const {rec,prec}=this.score(), e=this.R.i<3?.14:this.R.i<6?.07:0;
   if(rec>=.7-e&&prec>=.6-e) return this.win();
@@ -366,14 +369,16 @@ function Tracer(id,list,guide,title){ return {
  win(){ const n=this.n, R=this.R, b=this.board; this.drawGuide('',true); this.kc.getContext('2d').clearRect(0,0,this.bw,this.bh); closeOpts();
   if(n<=10){ const p=h('div',{class:'pop2'},NOBJ[n],stage); const r=b.getBoundingClientRect(); p.style.left=(r.right-60)+'px'; p.style.top=(r.top-40)+'px'; }
   PR._lit=[...new Set((PR._lit||[]).concat(n))]; save(); const lamp=$$('.lamps i')[n-1]; if(lamp) lamp.classList.add('on');
-  R.win(NNAME[n],TXT(n),1700,[String(n),NUM(n)]); },
+  R.win(nname(n),TX(n),1700,[String(n),NUM(n)]); },
  again(){ Speech.say(this.q); } }; }
 const r9=[1,2,3,4,5,6,7,8,9], r20=[10,11,12,13,14,15,16,17,18,19,20];
+const r50=Array.from({length:30},(_,i)=>21+i);
 const ACTS=[
  {id:'tr1',ic:'✏️',t:'تتبّع ١ – ٩',p:'ارسم فوق الرقم الباهت من النقطة الخضراء.',a:'#e53935',b:'#fdd835',g:Tracer('tr1',r9,'solid','رسّام رائع! ✏️')},
  {id:'tr2',ic:'🖍️',t:'تتبّع ١٠ – ٢٠',p:'الأعداد ذات الرقمين: ارسم الرقم الأول ثم الثاني.',a:'#ffb300',b:'#1a3fb0',g:Tracer('tr2',r20,'solid','رسّام الأعداد الكبيرة! 🖍️')},
  {id:'dot',ic:'〰️',t:'على الخط المنقّط',p:'الرقم مرسوم بخط منقّط فقط.',a:'#8e24aa',b:'#4fc3f7',g:Tracer('dot',()=>shuffle(r9.concat(r20)).slice(0,10),'outline','يد ثابتة! 〰️')},
- {id:'mem',ic:'🧠',t:'اكتب من ذاكرتك',p:'نسمع اسم الرقم ونكتبه بلا مساعدة.',a:'#2e9d3a',b:'#8d6e63',g:Tracer('mem',()=>shuffle(r9.concat(r20)).slice(0,10),'none','كاتب الأرقام! 🧠')}];
+ {id:'mem',ic:'🧠',t:'اكتب من ذاكرتك',p:'نسمع اسم الرقم ونكتبه بلا مساعدة.',a:'#2e9d3a',b:'#8d6e63',g:Tracer('mem',()=>shuffle(r9.concat(r20)).slice(0,10),'none','كاتب الأرقام! 🧠')},
+ {id:'tr50',ic:'🖊️',t:'اكتب ٢١ – ٥٠',p:'الأعداد الكبيرة: نتتبّعها أولًا، ثم على الخط المنقّط.',a:'#e09a00',b:'#1e6fd9',g:Tracer('tr50',()=>[21,30,34].concat(shuffle(r50.filter(x=>x!==21&&x!==30&&x!==34)).slice(0,7)),'solid','كاتب الأعداد الكبيرة! 🖊️')}];
 
 /* ---------- menu, input and boot ---------- */
 S=Object.assign(S,store.get('settings',{})); PR=Object.assign({},store.get('progress',{}));
